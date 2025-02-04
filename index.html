@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Membership Visualization</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Club Membership Visualization</h1>
+            
+            <div id="parameters" class="parameter-panel">
+                <div class="parameter-group">
+                    <label for="totalPeople">Number of People (N):</label>
+                    <input type="number" id="totalPeople" min="1" value="100">
+                </div>
+                
+                <div class="parameter-group">
+                    <label for="totalClubs">Number of Clubs (C):</label>
+                    <input type="number" id="totalClubs" min="1" value="3">
+                </div>
+
+                <button id="applyParams">Apply Parameters</button>
+            </div>
+
+            <div id="controls" class="control-panel">
+                <div class="simulation-controls">
+                    <button id="step1" class="control-btn">1 Turn</button>
+                    <button id="step10" class="control-btn">10 Turns</button>
+                    <button id="step100" class="control-btn">100 Turns</button>
+                </div>
+                <div class="run-controls">
+                    <button id="startRun" class="control-btn primary">Start Run</button>
+                    <button id="stopRun" class="control-btn danger">Stop</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div id="visualization-container">
+                <canvas id="visualization"></canvas>
+            </div>
+
+            <div id="legend" class="legend-panel">
+                <h3>Legend</h3>
+                <div class="legend-item">
+                    <span class="color-dot trait-M"></span>
+                    <span class="legend-label">Trait M</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color-dot trait-F"></span>
+                    <span class="legend-label">Trait F</span>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div id="stats">
+                <span>Turn: <span id="turnCounter">0</span></span>
+            </div>
+        </footer>
+    </div>
+
+    <script type="module" src="js/config.js"></script>
+    <script type="module" src="js/models/Person.js"></script>
+    <script type="module" src="js/models/Club.js"></script>
+    <script type="module" src="js/simulation/Simulator.js"></script>
+    <script type="module" src="js/visualization/Dashboard.js"></script>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
