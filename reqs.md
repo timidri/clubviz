@@ -10,36 +10,24 @@ We have N people in a city (N is a parameter). Every person has a trait T, for e
 
 In the city, there are C clubs, mathematically represented by sets. C is a parameter.
 
-The experiment considers a turn (time tick) based system. In each time tick, each person makes one decision:
+The experiment considers a turn (time tick) based system. In each turn, the following happens:
 
-- Either attempts to join clubs (with probability 1/C for each club)
-- Or attempts to leave clubs they are currently member of
+- For each club c:
+  - for every person in the global population:
+    - joining: if the person is not member of c, they join with probability 1/C. This means that a person can join multiple clubs in one turn.
+    - leaving: for every member of c who did not just join in this turn:
+      - c leaves with probability L, given by the function l. Function l is a parameter, taking the person p and the club c.
+        Initially, l is given as
 
-This means that in a single turn, a person can:
+        l(p, c) = 1 - count(c, t(p) / count(c))
 
-- Join multiple clubs (if they chose to attempt joining)
-- Leave multiple clubs (if they chose to attempt leaving)
-But they cannot both join and leave clubs in the same turn.
+        whereby:
 
-## Joining a club
-
-A person can join every club with a probability 1/C. So if there are 3 clubs, a person has a 1/3 chance to join any of them. This means that a person can join multiple clubs in one turn.
-
-## Leaving a club
-
-Every member of the club can leave the club they are member of with the probability L, given by the function l.
-Function l is a parameter, taking the person p and the club c.
-Initially, l is given as
-
-l(p, c) = 1 - count(c, t(p) / count(c))
-
-whereby:
-
-- count (a, b) gives the count of trait b in club a.
-- count(a) gives the count of all members of club a.
-- t(p) gives the trait of person p.
-
-This means that the person has a greater chance to leave a club if their trait is a stronger minority.
+      - count (a, b) gives the count of trait b in club a.
+      - count(a) gives the count of all members of club a.
+      - t(p) gives the trait of person p.
+  
+  This means that the person has a greater chance to leave a club if the opposite trait is a stronger majority.
 
 ## Visualization
 

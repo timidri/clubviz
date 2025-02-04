@@ -4,6 +4,7 @@ export class Person {
     this.trait = trait;
     this.clubs = new Set();
     this.positions = new Map(); // Store positions for each club
+    this.justJoined = new Set(); // Track clubs joined this turn
   }
 
   canJoinClub(club) {
@@ -14,6 +15,7 @@ export class Person {
     if (this.canJoinClub(club)) {
       club.addMember(this);
       this.clubs.add(club);
+      this.justJoined.add(club.id); // Track that we just joined this club
       // Use larger radius for dot placement
       const angle = Math.random() * Math.PI * 2;
       const radius = 20 + Math.random() * 50; // Min 20px from center, max 70px
@@ -34,19 +36,27 @@ export class Person {
   }
 
   takeTurn(allClubs, tester = null) {
+    // Clear justJoined set at the start of each turn
+    this.justJoined.clear();
+
     const canLeave = this.clubs.size > 0;
-    const willAttemptJoining = !canLeave || Math.random() < 0.5;
     let didAction = false;
     let actionClub = null;
 
-    if (willAttemptJoining && this.clubs.size < allClubs.length) {
+    if (this.clubs.size < allClubs.length) {
       const joinProbability = 1 / allClubs.length;
-      const availableClubs = allClubs.filter(club => this.canJoinClub(club));
-      
-      availableClubs.forEach(club => {
+      const availableClubs = allClubs.filter((club) => this.canJoinClub(club));
+
+      availableClubs.forEach((club) => {
         const passedCheck = Math.random() < joinProbability;
         if (tester) {
-          tester.recordAttempt('join', passedCheck, this, club, joinProbability);
+          tester.recordAttempt(
+            "join",
+            passedCheck,
+            this,
+            club,
+            joinProbability
+          );
         }
         if (passedCheck) {
           this.joinClub(club);
@@ -55,11 +65,20 @@ export class Person {
         }
       });
     } else if (canLeave) {
-      Array.from(this.clubs).forEach(club => {
+      Array.from(this.clubs).forEach((club) => {
+        // Skip if we just joined this club
+        if (this.justJoined.has(club.id)) return;
+
         const leaveProbability = this.getLeaveProbability(club);
         const passedCheck = Math.random() < leaveProbability;
         if (tester) {
-          tester.recordAttempt('leave', passedCheck, this, club, leaveProbability);
+          tester.recordAttempt(
+            "leave",
+            passedCheck,
+            this,
+            club,
+            leaveProbability
+          );
         }
         if (passedCheck) {
           this.leaveClub(club);
@@ -70,10 +89,14 @@ export class Person {
     }
 
     return {
-      action: willAttemptJoining ?
-        (didAction ? 'joined' : 'attempted join') :
-        (didAction ? 'left' : 'attempted leave'),
-      memberOf: Array.from(this.clubs).map(c => c.id)
+      action: willAttemptJoining
+        ? didAction
+          ? "joined"
+          : "attempted join"
+        : didAction
+        ? "left"
+        : "attempted leave",
+      memberOf: Array.from(this.clubs).map((c) => c.id),
     };
   }
 
@@ -81,7 +104,7 @@ export class Person {
     if (!club) return 0;
     const traitCount = club.getTraitCount(this.trait);
     const totalCount = club.getMemberCount();
-    return totalCount === 0 ? 1 : 1 - (traitCount / totalCount);
+    return totalCount === 0 ? 1 : 1 - traitCount / totalCount;
   }
 
   shouldLeaveClub(club) {
@@ -89,7 +112,7 @@ export class Person {
   }
 
   draw(ctx) {
-    this.clubs.forEach(club => {
+    this.clubs.forEach((club) => {
       const pos = this.positions.get(club.id);
       if (!pos) return;
 
@@ -98,7 +121,7 @@ export class Person {
 
       ctx.beginPath();
       ctx.arc(x, y, 3, 0, Math.PI * 2); // Smaller dots (5px -> 3px)
-      ctx.fillStyle = this.trait === 'M' ? '#2196f3' : '#e91e63';
+      ctx.fillStyle = this.trait === "M" ? "#2196f3" : "#e91e63";
       ctx.fill();
     });
   }
