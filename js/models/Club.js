@@ -42,53 +42,106 @@ export class Club {
     // Draw club circle
     ctx.beginPath();
     ctx.arc(this.x, this.y, 80, 0, Math.PI * 2);
-    ctx.strokeStyle = '#ccc';
+    ctx.strokeStyle = "#ccc";
     ctx.lineWidth = 2;
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = "white";
     ctx.fill();
     ctx.stroke();
 
-    const mCount = this.getTraitCount('M');
-    const fCount = this.getTraitCount('F');
+    const mCount = this.getTraitCount("M");
+    const fCount = this.getTraitCount("F");
     const total = this.getMemberCount();
-    
+
     // Bar chart positioning
     const barWidth = 60;
     const barHeight = 20;
-    const barX = this.x - barWidth/2;
-    const barY = this.y - 120; // Moved up, above the circle
-    
+    const barX = this.x - barWidth / 2;
+    const barY = this.y - 120;
+
     // Draw background bar
-    ctx.fillStyle = '#f0f0f0';
+    ctx.fillStyle = "#f0f0f0";
     ctx.fillRect(barX, barY, barWidth, barHeight);
-    
+
     // Draw trait bars
     if (total > 0) {
-      ctx.fillStyle = '#2196f3';
+      ctx.fillStyle = "#2196f3";
       const mWidth = (mCount / total) * barWidth;
       ctx.fillRect(barX, barY, mWidth, barHeight);
-      
-      ctx.fillStyle = '#e91e63';
+
+      ctx.fillStyle = "#e91e63";
       const fWidth = (fCount / total) * barWidth;
       ctx.fillRect(barX + mWidth, barY, fWidth, barHeight);
     }
 
-    // Draw counts above bar
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#2196f3';
-    ctx.fillText(`M: ${mCount}`, barX, barY - 5);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#e91e63';
-    ctx.fillText(`F: ${fCount}`, barX + barWidth, barY - 5);
+    // Text settings
+    const padding = 4;
+    const countHeight = 14;
+    ctx.font = "12px Arial";
 
-    // Draw total centered above counts
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'black';
-    ctx.fillText(`Members: ${total}`, this.x, barY - 20);
+    // Draw trait counts with background
+    const mText = `M: ${mCount}`;
+    const fText = `F: ${fCount}`;
+
+    // Left side (M count)
+    ctx.textAlign = "left";
+    const mMetrics = ctx.measureText(mText);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.fillRect(
+      barX - padding,
+      barY - countHeight - padding,
+      mMetrics.width + padding * 2,
+      countHeight
+    );
+    ctx.fillStyle = "#2196f3";
+    ctx.fillText(mText, barX, barY - padding);
+
+    // Right side (F count) - fixed positioning
+    ctx.textAlign = "left";
+    const fMetrics = ctx.measureText(fText);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.fillRect(
+      barX + mMetrics.width + padding * 3, // Position after M text
+      barY - countHeight - padding,
+      fMetrics.width + padding * 2,
+      countHeight
+    );
+    ctx.fillStyle = "#e91e63";
+    ctx.fillText(fText, barX + mMetrics.width + padding * 4, barY - padding);
+
+    // Draw ratio and total with backgrounds
+    ctx.textAlign = "center";
+    const ratio = total > 0 ? (mCount / fCount).toFixed(2) : "N/A";
+    const ratioText = `M/F: ${ratio}`;
+    const totalText = `Members: ${total}`;
+
+    // Ratio text
+    const ratioMetrics = ctx.measureText(ratioText);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.fillRect(
+      this.x - ratioMetrics.width / 2 - padding,
+      barY - 50,
+      ratioMetrics.width + padding * 2,
+      countHeight
+    );
+    ctx.fillStyle = "black";
+    ctx.fillText(ratioText, this.x, barY - 40);
+
+    // Total members text
+    const totalMetrics = ctx.measureText(totalText);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.fillRect(
+      this.x - totalMetrics.width / 2 - padding,
+      barY - 35,
+      totalMetrics.width + padding * 2,
+      countHeight
+    );
+    ctx.fillStyle = "black";
+    ctx.fillText(totalText, this.x, barY - 25);
 
     // Draw club label below circle
-    ctx.font = '14px Arial';
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "black";
+    ctx.textAlign = "center";
     ctx.fillText(`Club ${this.id}`, this.x, this.y + 100);
   }
 }
