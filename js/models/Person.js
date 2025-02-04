@@ -33,22 +33,38 @@ export class Person {
     return false;
   }
 
-  takeTurn(allClubs) {
+  takeTurn(allClubs, tester = null) {
     const canLeave = this.clubs.size > 0;
     const willAttemptJoining = !canLeave || Math.random() < 0.5;
     let didAction = false;
+    let actionClub = null;
 
     if (willAttemptJoining && this.clubs.size < allClubs.length) {
+      const joinProbability = 1 / allClubs.length;
       const availableClubs = allClubs.filter(club => this.canJoinClub(club));
+      
       availableClubs.forEach(club => {
-        if (Math.random() < (1 / allClubs.length)) {
-          didAction = this.joinClub(club) || didAction;
+        const passedCheck = Math.random() < joinProbability;
+        if (tester) {
+          tester.recordAttempt('join', passedCheck, this, club, joinProbability);
+        }
+        if (passedCheck) {
+          this.joinClub(club);
+          didAction = true;
+          actionClub = club;
         }
       });
     } else if (canLeave) {
       Array.from(this.clubs).forEach(club => {
-        if (this.shouldLeaveClub(club)) {
-          didAction = this.leaveClub(club) || didAction;
+        const leaveProbability = this.getLeaveProbability(club);
+        const passedCheck = Math.random() < leaveProbability;
+        if (tester) {
+          tester.recordAttempt('leave', passedCheck, this, club, leaveProbability);
+        }
+        if (passedCheck) {
+          this.leaveClub(club);
+          didAction = true;
+          actionClub = club;
         }
       });
     }
@@ -61,20 +77,22 @@ export class Person {
     };
   }
 
-  shouldLeaveClub(club) {
-    if (!club) return false;
+  getLeaveProbability(club) {
+    if (!club) return 0;
     const traitCount = club.getTraitCount(this.trait);
     const totalCount = club.getMemberCount();
-    if (totalCount === 0) return true;
-    const probability = 1 - (traitCount / totalCount);
-    return Math.random() < probability;
+    return totalCount === 0 ? 1 : 1 - (traitCount / totalCount);
+  }
+
+  shouldLeaveClub(club) {
+    return Math.random() < this.getLeaveProbability(club);
   }
 
   draw(ctx) {
     this.clubs.forEach(club => {
       const pos = this.positions.get(club.id);
       if (!pos) return;
-      
+
       const x = club.x + pos.radius * Math.cos(pos.angle);
       const y = club.y + pos.radius * Math.sin(pos.angle);
 

@@ -13,10 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const config = getCurrentConfig();
     console.log('Current configuration:', config);
 
-    // Create test clubs
+    // Create clubs
     const clubs = Array(config.totalClubs).fill().map((_, i) => new Club(i));
 
-    // Create people with random traits
+    // Create people with random traits but no initial club memberships
     const people = Array(config.totalPeople).fill().map((_, i) => {
       const trait = Math.random() < 0.5 ? 'M' : 'F';
       return new Person(i, trait);

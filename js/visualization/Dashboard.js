@@ -1,3 +1,5 @@
+import { Tester } from '../simulation/Tester.js';
+
 export class Dashboard {
   constructor() {
     this.canvas = document.getElementById('visualization');
@@ -22,8 +24,8 @@ export class Dashboard {
     this.people = [];
     this.turnCounter = document.getElementById('turnCounter');
     this.currentTurn = 0;
-
-    // Bind control buttons
+    this.testingEnabled = false;
+    this.tester = null;
     this.bindControls();
   }
 
@@ -33,6 +35,47 @@ export class Dashboard {
     document.getElementById('step100').addEventListener('click', () => this.runTurns(100));
     document.getElementById('startRun').addEventListener('click', () => this.startContinuousRun());
     document.getElementById('stopRun').addEventListener('click', () => this.stopContinuousRun());
+    document.getElementById('toggleTesting').addEventListener('click', () => this.toggleTesting());
+  }
+
+  toggleTesting() {
+    this.testingEnabled = !this.testingEnabled;
+    const button = document.getElementById('toggleTesting');
+    button.textContent = `Testing: ${this.testingEnabled ? 'On' : 'Off'}`;
+    
+    if (this.testingEnabled) {
+      this.tester = new Tester();
+    } else {
+      this.tester = null;
+    }
+  }
+
+  runTurns(count) {
+    for (let i = 0; i < count; i++) {
+      this.people.forEach(person => person.takeTurn(this.clubs, this.tester));
+      this.currentTurn++;
+      this.turnCounter.textContent = this.currentTurn;
+    }
+    this.draw();
+    
+    if (this.tester && this.currentTurn % 100 === 0) {
+      this.tester.logStats();
+    }
+  }
+
+  startContinuousRun() {
+    if (!this.runInterval) {
+      this.runInterval = setInterval(() => {
+        this.runTurns(1);
+      }, 50); // Much faster update (20 fps)
+    }
+  }
+
+  stopContinuousRun() {
+    if (this.runInterval) {
+      clearInterval(this.runInterval);
+      this.runInterval = null;
+    }
   }
 
   initialize(clubs, people) {
@@ -63,29 +106,5 @@ export class Dashboard {
 
     // Draw people
     this.people.forEach(person => person.draw(this.ctx));
-  }
-
-  runTurns(count) {
-    for (let i = 0; i < count; i++) {
-      this.people.forEach(person => person.takeTurn(this.clubs));
-      this.currentTurn++;
-      this.turnCounter.textContent = this.currentTurn;
-    }
-    this.draw();
-  }
-
-  startContinuousRun() {
-    if (!this.runInterval) {
-      this.runInterval = setInterval(() => {
-        this.runTurns(1);
-      }, 50); // Much faster update (20 fps)
-    }
-  }
-
-  stopContinuousRun() {
-    if (this.runInterval) {
-      clearInterval(this.runInterval);
-      this.runInterval = null;
-    }
   }
 }
