@@ -35,6 +35,9 @@ h1 {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .parameter-group {
@@ -71,9 +74,14 @@ h1 {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  background-color: #e0e0e0;  /* Changed default button color */
+  color: black;  /* Changed default text color */
+  transition: background-color 0.3s;
+}
+
+.control-btn.primary {
   background-color: #4caf50;
   color: white;
-  transition: background-color 0.3s;
 }
 
 .control-btn:hover {

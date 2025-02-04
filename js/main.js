@@ -1,12 +1,14 @@
 import { defaultConfig, getCurrentConfig } from './config.js';
 import { Person } from './models/Person.js';
 import { Club } from './models/Club.js';
+import { Dashboard } from './visualization/Dashboard.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  const dashboard = new Dashboard();
+
   document.getElementById('totalPeople').value = defaultConfig.totalPeople;
   document.getElementById('totalClubs').value = defaultConfig.totalClubs;
 
-  // Test button click
   document.getElementById('applyParams').addEventListener('click', () => {
     const config = getCurrentConfig();
     console.log('Current configuration:', config);
@@ -14,38 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Create test clubs
     const clubs = Array(config.totalClubs).fill().map((_, i) => new Club(i));
 
-    // Create test people
-    const people = [
-      new Person(1, 'M'),
-      new Person(2, 'F'),
-      new Person(3, 'M')
-    ];
-
-    console.log('Initial setup:', {
-      clubs: clubs.map(c => ({
-        id: c.id,
-        members: c.getMemberCount(),
-        traitCounts: Object.fromEntries(c.traitCounts)
-      })),
-      people: people.map(p => ({
-        id: p.id,
-        trait: p.trait,
-        clubs: p.clubs.size
-      }))
+    // Create people with random traits
+    const people = Array(config.totalPeople).fill().map((_, i) => {
+      const trait = Math.random() < 0.5 ? 'M' : 'F';
+      return new Person(i, trait);
     });
 
-    // Simulate 5 turns
-    for (let turn = 1; turn <= 5; turn++) {
-      console.log(`\nTurn ${turn}:`);
-      people.forEach(person => {
-        const result = person.takeTurn(clubs);
-        console.log(`Person ${person.id} (${person.trait}):`, {
-          action: result.action,
-          memberOf: result.memberOf,
-          clubDetails: result.clubDetails
-        });
-      });
-    }
-
+    // Initialize dashboard with clubs and people
+    dashboard.initialize(clubs, people);
   });
 });
