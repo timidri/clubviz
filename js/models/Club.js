@@ -103,15 +103,16 @@ export class Club {
     // Right side (F count) - fixed positioning
     ctx.textAlign = "left";
     const fMetrics = ctx.measureText(fText);
+    const fBoxX = barX + barWidth - fMetrics.width - padding * 2; // Align to right side of bar
     ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
     ctx.fillRect(
-      barX + mMetrics.width + padding * 3, // Position after M text
+      fBoxX,
       barY - countHeight - padding,
       fMetrics.width + padding * 2,
       countHeight
     );
     ctx.fillStyle = "#e91e63";
-    ctx.fillText(fText, barX + mMetrics.width + padding * 4, barY - padding);
+    ctx.fillText(fText, fBoxX + padding, barY - padding);
 
     // Draw ratio and total with backgrounds
     ctx.textAlign = "center";

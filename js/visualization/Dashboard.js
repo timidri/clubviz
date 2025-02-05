@@ -130,6 +130,7 @@ export class Dashboard {
     for (let i = 0; i < count; i++) {
       this.simulator.takeTurn();
       this.currentTurn++;
+      document.getElementById("turnCounter").textContent = this.currentTurn;
     }
     this.draw();
 
@@ -156,11 +157,13 @@ export class Dashboard {
   initialize(clubs, people) {
     this.clubs = clubs;
     this.people = people;
-    this.simulator = new Simulator(people, clubs);
+    const config = getCurrentConfig();
+    this.simulator = new Simulator(people, clubs, config);
     if (this.testingEnabled && this.tester) {
       this.simulator.setTester(this.tester);
     }
     this.currentTurn = 0;
+    document.getElementById("turnCounter").textContent = this.currentTurn;
     this.updateStats(); // This will update the turn counter in stats panel
 
     // Position clubs with proper spacing
@@ -176,6 +179,30 @@ export class Dashboard {
     this.draw();
   }
 
+  updateLegend() {
+    const traitCounts = {
+      M: this.people.filter((person) => person.trait === "M").length,
+      F: this.people.filter((person) => person.trait === "F").length,
+    };
+
+    document.querySelectorAll(".legend-item").forEach((item) => {
+      const label = item.querySelector(".legend-label");
+      const trait = label.textContent.trim().split(" ")[1]; // Get M or F from "Trait M" or "Trait F"
+      const count = traitCounts[trait];
+
+      // Remove existing count if any
+      const existingCount = label.querySelector(".trait-count");
+      if (existingCount) {
+        existingCount.remove();
+      }
+
+      const countSpan = document.createElement("span");
+      countSpan.className = "trait-count";
+      countSpan.textContent = count;
+      label.appendChild(countSpan);
+    });
+  }
+
   draw() {
     // Clear canvas
     this.ctx.clearRect(0, 0, this.width, this.height);
@@ -185,6 +212,9 @@ export class Dashboard {
 
     // Draw people
     this.people.forEach((person) => person.draw(this.ctx));
+
+    // Update legend counts
+    this.updateLegend();
   }
 
   updateStats() {

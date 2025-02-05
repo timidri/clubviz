@@ -1,7 +1,8 @@
 export class Simulator {
-  constructor(people, clubs) {
+  constructor(people, clubs, config) {
     this.people = people;
     this.clubs = clubs;
+    this.config = config;
     this.tester = null;
   }
 
@@ -21,19 +22,17 @@ export class Simulator {
       // Process each club for both joining and leaving
       this.clubs.forEach((club) => {
         const isMember = club.isMember(person);
-        // console.log(
-        //   `person: ${person.id}, club: ${club.id}, isMember: ${isMember}`
-        // );
 
         // Handle joining logic if not a member
         if (!isMember) {
-          const joinProbability = 1 / this.clubs.length;
-          const passedJoinCheck = Math.random() < joinProbability;
+          const baseJoinProbability =
+            this.config.joinProbability / this.clubs.length;
+          const passedJoinCheck = Math.random() < baseJoinProbability;
           if (this.tester) {
             this.tester.testJoin(
               person,
               club,
-              joinProbability,
+              baseJoinProbability,
               passedJoinCheck
             );
           }
@@ -98,10 +97,8 @@ export class Simulator {
     const traitCount = club.getTraitCount(person.trait);
     const totalCount = club.getMemberCount();
     const traitProportion = traitCount / (1.0 * totalCount);
-    const prob = traitProportion < 0.5 ? 1 : 0;
-    // console.log(
-    //   `traitCount: ${traitCount}, totalCount: ${totalCount}, proportion: ${traitProportion}, prob: ${prob}`
-    // );
+    const prob =
+      traitProportion < this.config.leaveProbabilityThreshold ? 1 : 0;
     return prob;
   }
 }

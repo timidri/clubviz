@@ -12,14 +12,58 @@
         <h1>Club Membership Visualization</h1>
 
         <div id="parameters" class="parameter-panel">
-          <div class="parameter-group">
-            <label for="totalPeople">Number of People (N):</label>
-            <input type="number" id="totalPeople" min="1" value="100" />
-          </div>
+          <div class="parameter-columns">
+            <!-- Left Column: Basic Parameters -->
+            <div class="parameter-column">
+              <div class="parameter-group">
+                <label for="totalPeople">Number of People (N):</label>
+                <input type="number" id="totalPeople" min="1" value="100" />
+                <div class="note">Total population size</div>
+              </div>
 
-          <div class="parameter-group">
-            <label for="totalClubs">Number of Clubs (C):</label>
-            <input type="number" id="totalClubs" min="1" value="3" />
+              <div class="parameter-group">
+                <label for="totalClubs">Number of Clubs:</label>
+                <input type="number" id="totalClubs" min="1" value="3" />
+                <div class="note">(This value represents C in formulas)</div>
+              </div>
+            </div>
+
+            <!-- Right Column: Probability Parameters -->
+            <div class="parameter-column">
+              <div class="parameter-group">
+                <label for="joinProbability">Join Probability (k):</label>
+                <input
+                  type="number"
+                  id="joinProbability"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value="1"
+                />
+                <div class="formula">P(join) = k/C</div>
+                <div class="note">Probability of joining any club per turn</div>
+              </div>
+
+              <div class="parameter-group">
+                <label for="leaveProbabilityThreshold"
+                  >Leave Threshold (t):</label
+                >
+                <input
+                  type="number"
+                  id="leaveProbabilityThreshold"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value="0.5"
+                />
+                <div class="formula">
+                  P(leave) = 1 if trait proportion < t, else 0
+                </div>
+                <div class="note">
+                  Members leave when their trait becomes underrepresented
+                </div>
+              </div>
+            </div>
           </div>
 
           <button id="applyParams" class="control-btn">Apply Parameters</button>
@@ -31,6 +75,7 @@
             <button id="step10" class="control-btn">10 Turns</button>
             <button id="step100" class="control-btn">100 Turns</button>
           </div>
+          <div class="turn-counter">Turn: <span id="turnCounter">0</span></div>
           <div class="run-controls">
             <button id="startRun" class="control-btn primary">Start Run</button>
             <button id="stopRun" class="control-btn danger">Stop</button>
@@ -51,20 +96,19 @@
           <h3>Legend</h3>
           <div class="legend-item">
             <span class="color-dot trait-M"></span>
-            <span class="legend-label">Trait M</span>
+            <span class="legend-label"
+              >Trait M <span class="trait-count">0</span></span
+            >
           </div>
           <div class="legend-item">
             <span class="color-dot trait-F"></span>
-            <span class="legend-label">Trait F</span>
+            <span class="legend-label"
+              >Trait F <span class="trait-count">0</span></span
+            >
           </div>
         </div>
       </main>
-
-      <footer>
-        <!-- Remove the duplicate stats div from here -->
-      </footer>
     </div>
-
     <script type="module" src="js/main.js"></script>
   </body>
 </html>
