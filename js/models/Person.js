@@ -7,6 +7,14 @@ export class Person {
     this.justJoined = new Set(); // Track clubs joined this turn
   }
 
+  startTurn() {
+    this.justJoined.clear(); // Reset clubs joined this turn
+  }
+
+  isJustJoined(club) {
+    return this.justJoined.has(club.id);
+  }
+
   canJoinClub(club) {
     return !this.clubs.has(club);
   }

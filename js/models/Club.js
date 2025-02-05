@@ -7,9 +7,14 @@ export class Club {
     this.y = 0;
   }
 
+  isMember(person) {
+    return this.members.has(person);
+  }
+
   addMember(person) {
-    if (!this.members.has(person)) {
+    if (!this.isMember(person)) {
       this.members.add(person);
+      person.joinClub(this);
       this.updateTraitCount(person.trait, 1);
     }
   }

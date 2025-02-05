@@ -14,14 +14,13 @@ export class Simulator {
 
     // For each person in the population
     this.people.forEach((person) => {
-      // Clear justJoined set at the start of each turn
-      person.justJoined.clear();
+      person.startTurn();
       let didJoin = false;
       let didLeave = false;
 
       // Process each club for both joining and leaving
       this.clubs.forEach((club) => {
-        const isMember = person.clubs.has(club);
+        const isMember = club.isMember(person);
         // console.log(
         //   `person: ${person.id}, club: ${club.id}, isMember: ${isMember}`
         // );
@@ -44,7 +43,7 @@ export class Simulator {
           }
         }
         // Handle leaving logic if already a member and didn't just join
-        else if (!person.justJoined.has(club.id)) {
+        else if (!person.isJustJoined(club)) {
           const leaveProbability = this.calculateLeaveProbability(person, club);
           const passedLeaveCheck = Math.random() < leaveProbability;
           if (this.tester) {
@@ -81,9 +80,7 @@ export class Simulator {
   }
 
   joinClub(person, club) {
-    club.addMember(person);
-    person.clubs.add(club);
-    person.justJoined.add(club.id);
+    person.joinClub(club);
 
     // Set position for visualization
     const angle = Math.random() * Math.PI * 2;
@@ -92,8 +89,7 @@ export class Simulator {
   }
 
   leaveClub(person, club) {
-    club.removeMember(person);
-    person.clubs.delete(club);
+    person.leaveClub(club);
     person.positions.delete(club.id);
   }
 
