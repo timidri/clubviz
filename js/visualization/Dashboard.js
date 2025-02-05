@@ -72,9 +72,11 @@ export class Dashboard {
   }
 
   bindControls() {
-    document
-      .getElementById("step1")
-      .addEventListener("click", () => this.runTurns(1));
+    document.getElementById("step1").addEventListener("click", () => {
+      if (this.tester) this.tester.setDebugMode(true);
+      this.runTurns(1);
+      if (this.tester) this.tester.setDebugMode(false);
+    });
     document
       .getElementById("step10")
       .addEventListener("click", () => this.runTurns(10));
@@ -99,18 +101,8 @@ export class Dashboard {
     }
 
     for (let i = 0; i < count; i++) {
-      // Enable debug logging only for single-step
-      if (count === 1 && this.tester) {
-        this.tester.setDebugMode(true);
-      }
-
       this.simulator.takeTurn();
       this.currentTurn++;
-
-      // Disable debug logging after the turn
-      if (count === 1 && this.tester) {
-        this.tester.setDebugMode(false);
-      }
     }
     this.draw();
 
@@ -178,7 +170,7 @@ export class Dashboard {
       // Join statistics
       html += `<div class="stat-section">
         <h4>Join Statistics</h4>
-        <p>Expected Rate: ${(33.33).toFixed(2)}%</p>
+        <p>Expected Rate: ${(100 / this.clubs.length).toFixed(2)}%</p>
         <p>Actual Rate: ${(stats.join.actualRate * 100).toFixed(2)}%</p>
       </div>`;
 
@@ -187,14 +179,12 @@ export class Dashboard {
       stats.leave.byClub.forEach((clubStats, clubId) => {
         html += `<div class="club-stat">
           <h5>Club ${clubId}</h5>`;
-        ["M", "F"].forEach((trait) => {
-          const traitStats = clubStats[trait];
-          if (traitStats.attempts > 0) {
-            html += `<p>${trait} - Expected: ${(
-              traitStats.expectedProb * 100
-            ).toFixed(2)}%, 
-              Actual: ${(traitStats.actualRate * 100).toFixed(2)}%</p>`;
-          }
+        Object.entries(clubStats).forEach(([trait, traitStats]) => {
+          html += `<p>${trait} - Expected: ${(
+            traitStats.expectedProb * 100
+          ).toFixed(2)}%, Actual: ${(traitStats.actualRate * 100).toFixed(
+            2
+          )}%</p>`;
         });
         html += "</div>";
       });

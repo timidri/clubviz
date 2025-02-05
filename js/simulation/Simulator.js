@@ -29,9 +29,6 @@ export class Simulator {
         // Handle joining logic if not a member
         if (!isMember) {
           const joinProbability = 1 / this.clubs.length;
-          if (this.tester) {
-            this.tester.recordAttempt(person, club, "join");
-          }
           const passedJoinCheck = Math.random() < joinProbability;
           if (this.tester) {
             this.tester.testJoin(
@@ -49,9 +46,6 @@ export class Simulator {
         // Handle leaving logic if already a member and didn't just join
         else if (!person.justJoined.has(club.id)) {
           const leaveProbability = this.calculateLeaveProbability(person, club);
-          if (this.tester) {
-            this.tester.recordAttempt(person, club, "leave");
-          }
           const passedLeaveCheck = Math.random() < leaveProbability;
           if (this.tester) {
             this.tester.testLeave(

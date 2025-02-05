@@ -13,25 +13,13 @@ export class Tester {
     };
   }
 
-  recordAttempt(person, club, type = "join") {
-    // Only track stats, no longer logging here
-    if (!person || !club) {
-      console.warn("Invalid attempt record:", {
-        person: person,
-        club: club,
-        stack: new Error().stack,
-      });
-      return;
-    }
-  }
-
   logDecision(type, details) {
     if (!this.debugMode) return;
 
     const timestamp = new Date().toLocaleTimeString();
     const color = type === "join" ? "#2E7D32" : "#C62828";
     const icon = type === "join" ? "✨" : "🚪";
-    const title = type === "join" ? "JOIN DECISION" : "LEAVE DECISION";
+    const title = type === "join" ? "JOIN" : "LEAVE";
 
     console.log(
       "\n%c" + icon + " " + title + " %s",
@@ -82,6 +70,7 @@ export class Tester {
   }
 
   testLeave(person, club, probability, success) {
+    // Ensure we have stats initialized for this club
     while (this.stats.leave.byClub.length <= club.id) {
       this.stats.leave.byClub.push({
         M: { attempts: 0, leaves: 0, expectedProb: 0, actualRate: 0 },
@@ -91,8 +80,10 @@ export class Tester {
 
     const traitStats = this.stats.leave.byClub[club.id][person.trait];
     traitStats.attempts++;
-    traitStats.expectedProb = probability;
     if (success) traitStats.leaves++;
+
+    // Update expected probability and actual rate
+    traitStats.expectedProb = probability;
     traitStats.actualRate = traitStats.leaves / traitStats.attempts;
 
     this.logDecision("leave", {
