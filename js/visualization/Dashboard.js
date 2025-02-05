@@ -1,5 +1,8 @@
 import { Tester } from "../simulation/Tester.js";
 import { Simulator } from "../simulation/Simulator.js";
+import { getCurrentConfig } from "../config.js";
+import { Club } from "../models/Club.js";
+import { Person } from "../models/Person.js";
 
 export class Dashboard {
   constructor() {
@@ -92,6 +95,30 @@ export class Dashboard {
     document
       .getElementById("toggleTesting")
       .addEventListener("click", () => this.toggleTesting());
+    document
+      .getElementById("applyParams")
+      .addEventListener("click", () => this.applyParameters());
+  }
+
+  applyParameters() {
+    const config = getCurrentConfig();
+    console.log("Current configuration:", config);
+
+    // Create clubs
+    const clubs = Array(config.totalClubs)
+      .fill()
+      .map((_, i) => new Club(i));
+
+    // Create people with random traits but no initial club memberships
+    const people = Array(config.totalPeople)
+      .fill()
+      .map((_, i) => {
+        const trait = Math.random() < 0.5 ? "M" : "F";
+        return new Person(i, trait);
+      });
+
+    // Initialize dashboard with clubs and people
+    this.initialize(clubs, people);
   }
 
   runTurns(count) {
