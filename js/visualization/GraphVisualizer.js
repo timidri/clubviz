@@ -62,8 +62,8 @@ export class GraphVisualizer extends Visualizer {
           selector: "edge",
           style: {
             width: 1,
-            "line-color": "#666",
-            "line-opacity": 0.1,
+            "line-color": "#333",
+            "line-opacity": 0.3,
             "curve-style": "bezier",
             opacity: 1,
             "target-arrow-shape": "none",
@@ -97,7 +97,7 @@ export class GraphVisualizer extends Visualizer {
         for (let j = i + 1; j < members.length; j++) {
           elements.push({
             data: {
-              id: `e${members[i].id}-${members[j].id}`,
+              id: `c${club.id}:${members[i].id}-${members[j].id}`,
               source: `${members[i].id}`,
               target: `${members[j].id}`,
             },
