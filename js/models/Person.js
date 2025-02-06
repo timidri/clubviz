@@ -42,19 +42,4 @@ export class Person {
     }
     return false;
   }
-
-  draw(ctx) {
-    this.clubs.forEach((club) => {
-      const pos = this.positions.get(club.id);
-      if (!pos) return;
-
-      const x = club.x + pos.radius * Math.cos(pos.angle);
-      const y = club.y + pos.radius * Math.sin(pos.angle);
-
-      ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2); // Smaller dots (5px -> 3px)
-      ctx.fillStyle = this.trait === "M" ? "#2196f3" : "#e91e63";
-      ctx.fill();
-    });
-  }
 }

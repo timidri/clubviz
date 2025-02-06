@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Club Membership Visualization</title>
     <link rel="stylesheet" href="styles/main.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"></script>
   </head>
   <body>
     <div class="container">
@@ -80,6 +81,10 @@
             <button id="startRun" class="control-btn primary">Start Run</button>
             <button id="stopRun" class="control-btn danger">Stop</button>
             <button id="toggleTesting" class="control-btn">Testing: Off</button>
+            <select id="visualizerSelect" class="control-btn">
+              <option value="canvas">Canvas View</option>
+              <option value="graph">Graph View</option>
+            </select>
           </div>
         </div>
       </header>

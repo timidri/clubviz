@@ -3,6 +3,8 @@ import { Simulator } from "../simulation/Simulator.js";
 import { getCurrentConfig } from "../config.js";
 import { Club } from "../models/Club.js";
 import { Person } from "../models/Person.js";
+import { CanvasVisualizer } from "./CanvasVisualizer.js";
+import { GraphVisualizer } from "./GraphVisualizer.js";
 
 export class Dashboard {
   constructor() {
@@ -22,6 +24,14 @@ export class Dashboard {
     this.simulator = null;
     this.testingEnabled = false;
     this.tester = null;
+
+    // Initialize visualizer
+    this.visualizer = new CanvasVisualizer(
+      this.canvas,
+      this.ctx,
+      this.width,
+      this.height
+    );
     this.bindControls();
   }
 
@@ -45,6 +55,11 @@ export class Dashboard {
     // Update internal dimensions
     this.width = rect.width;
     this.height = rect.height;
+
+    // Update visualizer dimensions
+    if (this.visualizer) {
+      this.visualizer.updateDimensions(this.width, this.height);
+    }
   }
 
   toggleTesting() {
@@ -98,6 +113,9 @@ export class Dashboard {
     document
       .getElementById("applyParams")
       .addEventListener("click", () => this.applyParameters());
+    document
+      .getElementById("visualizerSelect")
+      .addEventListener("change", (e) => this.switchVisualizer(e.target.value));
   }
 
   applyParameters() {
@@ -166,55 +184,44 @@ export class Dashboard {
     document.getElementById("turnCounter").textContent = this.currentTurn;
     this.updateStats(); // This will update the turn counter in stats panel
 
-    // Position clubs with proper spacing
-    const padding = 100;
-    const usableWidth = this.width - padding * 2;
-    const spacing = usableWidth / (clubs.length - 1 || 1);
-
-    clubs.forEach((club, i) => {
-      club.x = padding + spacing * i;
-      club.y = this.height / 2;
-    });
-
-    this.draw();
+    // Initialize visualizer with data
+    this.visualizer.initialize(clubs, people);
   }
 
-  updateLegend() {
-    const traitCounts = {
-      M: this.people.filter((person) => person.trait === "M").length,
-      F: this.people.filter((person) => person.trait === "F").length,
-    };
+  switchVisualizer(type) {
+    let newVisualizer;
+    if (type === "canvas") {
+      newVisualizer = new CanvasVisualizer(
+        this.canvas,
+        this.ctx,
+        this.width,
+        this.height
+      );
+    } else if (type === "graph") {
+      newVisualizer = new GraphVisualizer(
+        this.canvas,
+        this.ctx,
+        this.width,
+        this.height
+      );
+    }
 
-    document.querySelectorAll(".legend-item").forEach((item) => {
-      const label = item.querySelector(".legend-label");
-      const trait = label.textContent.trim().split(" ")[1]; // Get M or F from "Trait M" or "Trait F"
-      const count = traitCounts[trait];
-
-      // Remove existing count if any
-      const existingCount = label.querySelector(".trait-count");
-      if (existingCount) {
-        existingCount.remove();
+    if (newVisualizer) {
+      if (this.visualizer) {
+        this.visualizer.cleanup();
       }
-
-      const countSpan = document.createElement("span");
-      countSpan.className = "trait-count";
-      countSpan.textContent = count;
-      label.appendChild(countSpan);
-    });
+      this.visualizer = newVisualizer;
+      this.visualizer.updateDimensions(this.width, this.height);
+      if (this.clubs.length > 0 && this.people.length > 0) {
+        this.visualizer.initialize(this.clubs, this.people);
+      }
+    }
   }
 
   draw() {
-    // Clear canvas
-    this.ctx.clearRect(0, 0, this.width, this.height);
-
-    // Draw clubs
-    this.clubs.forEach((club) => club.draw(this.ctx));
-
-    // Draw people
-    this.people.forEach((person) => person.draw(this.ctx));
-
-    // Update legend counts
-    this.updateLegend();
+    if (this.visualizer) {
+      this.visualizer.draw();
+    }
   }
 
   updateStats() {
