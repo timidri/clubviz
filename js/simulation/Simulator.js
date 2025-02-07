@@ -97,8 +97,20 @@ export class Simulator {
     const traitCount = club.getTraitCount(person.trait);
     const totalCount = club.getMemberCount();
     const traitProportion = traitCount / (1.0 * totalCount);
-    const prob =
-      traitProportion < this.config.leaveProbabilityThreshold ? 1 : 0;
+    const prob = traitProportion < this.config.leaveProbabilityThreshold 
+      ? this.config.leaveHighProb 
+      : this.config.leaveLowProb;
+    
+    // Debug logging
+    console.log(`Leave probability for ${person.id} in club ${club.id}:`, {
+      trait: person.trait,
+      traitCount,
+      totalCount,
+      proportion: traitProportion,
+      threshold: this.config.leaveProbabilityThreshold,
+      probability: prob
+    });
+    
     return prob;
   }
-}
+} // end of class
