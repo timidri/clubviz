@@ -6,9 +6,11 @@ export const defaultConfig = {
     M: "#2196F3",
     F: "#E91E63",
   },
-  joinProbability: 1, // Base probability of joining any club (0-1)
-  leaveProbabilityThreshold: 0.5, // Trait proportion threshold for leaving (0-1)
-  simulationSpeed: 500, // milliseconds between turns during auto-run
+  joinProbability: 1,
+  leaveProbabilityThreshold: 0.5,
+  leaveHighProb: 1.0,
+  leaveLowProb: 0.0,
+  simulationSpeed: 500,
 };
 
 export function getCurrentConfig() {
@@ -25,6 +27,12 @@ export function getCurrentConfig() {
     leaveProbabilityThreshold:
       parseFloat(document.getElementById("leaveProbabilityThreshold").value) ||
       defaultConfig.leaveProbabilityThreshold,
+    leaveHighProb:
+      parseFloat(document.getElementById("leaveHighProb").value) ||
+      defaultConfig.leaveHighProb,
+    leaveLowProb:
+      parseFloat(document.getElementById("leaveLowProb").value) ||
+      defaultConfig.leaveLowProb,
     traits: defaultConfig.traits,
     colors: defaultConfig.colors,
     simulationSpeed: defaultConfig.simulationSpeed,
