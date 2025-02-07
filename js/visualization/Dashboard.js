@@ -120,6 +120,8 @@ export class Dashboard {
 
   applyParameters() {
     const config = getCurrentConfig();
+    
+    // Add debug logging to verify config values
     console.log("Current configuration:", config);
 
     // Create clubs
@@ -176,6 +178,14 @@ export class Dashboard {
     this.clubs = clubs;
     this.people = people;
     const config = getCurrentConfig();
+    
+    // Debug logging to verify config values before creating simulator
+    console.log("Initializing simulator with config:", {
+      leaveHighProb: config.leaveHighProb,
+      leaveLowProb: config.leaveLowProb,
+      threshold: config.leaveProbabilityThreshold
+    });
+    
     this.simulator = new Simulator(people, clubs, config);
     if (this.testingEnabled && this.tester) {
       this.simulator.setTester(this.tester);
