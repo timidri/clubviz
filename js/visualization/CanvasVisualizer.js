@@ -36,8 +36,8 @@ export class CanvasVisualizer extends Visualizer {
 
     // Update legend
     const traitCounts = {
-      M: this.people.filter((person) => person.trait === "M").length,
-      F: this.people.filter((person) => person.trait === "F").length,
+      R: this.people.filter((person) => person.trait === "R").length,
+      B: this.people.filter((person) => person.trait === "B").length,
     };
     this.updateLegend(traitCounts);
   }
@@ -52,8 +52,8 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.fill();
     this.ctx.stroke();
 
-    const mCount = club.getTraitCount("M");
-    const fCount = club.getTraitCount("F");
+    const rCount = club.getTraitCount("R");
+    const bCount = club.getTraitCount("B");
     const total = club.getMemberCount();
 
     // Bar chart positioning
@@ -68,13 +68,13 @@ export class CanvasVisualizer extends Visualizer {
 
     // Draw trait bars
     if (total > 0) {
-      this.ctx.fillStyle = "#2196f3";
-      const mWidth = (mCount / total) * barWidth;
-      this.ctx.fillRect(barX, barY, mWidth, barHeight);
-
       this.ctx.fillStyle = "#e91e63";
-      const fWidth = (fCount / total) * barWidth;
-      this.ctx.fillRect(barX + mWidth, barY, fWidth, barHeight);
+      const rWidth = (rCount / total) * barWidth;
+      this.ctx.fillRect(barX, barY, rWidth, barHeight);
+
+      this.ctx.fillStyle = "#2196f3";
+      const bWidth = (bCount / total) * barWidth;
+      this.ctx.fillRect(barX + rWidth, barY, bWidth, barHeight);
     }
 
     // Text settings
@@ -83,40 +83,40 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.font = "12px Arial";
 
     // Draw trait counts with background
-    const mText = `M: ${mCount}`;
-    const fText = `F: ${fCount}`;
+    const rText = `R: ${rCount}`;
+    const bText = `B: ${bCount}`;
 
     // Left side (M count)
     this.ctx.textAlign = "left";
-    const mMetrics = this.ctx.measureText(mText);
+    const rMetrics = this.ctx.measureText(rText);
     this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
     this.ctx.fillRect(
       barX - padding,
       barY - countHeight - padding,
-      mMetrics.width + padding * 2,
-      countHeight
-    );
-    this.ctx.fillStyle = "#2196f3";
-    this.ctx.fillText(mText, barX, barY - padding);
-
-    // Right side (F count)
-    this.ctx.textAlign = "left";
-    const fMetrics = this.ctx.measureText(fText);
-    const fBoxX = barX + barWidth - fMetrics.width - padding * 2;
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    this.ctx.fillRect(
-      fBoxX,
-      barY - countHeight - padding,
-      fMetrics.width + padding * 2,
+      rMetrics.width + padding * 2,
       countHeight
     );
     this.ctx.fillStyle = "#e91e63";
-    this.ctx.fillText(fText, fBoxX + padding, barY - padding);
+    this.ctx.fillText(rText, barX, barY - padding);
+
+    // Right side (F count)
+    this.ctx.textAlign = "left";
+    const bMetrics = this.ctx.measureText(bText);
+    const bBoxX = barX + barWidth - bMetrics.width - padding * 2;
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    this.ctx.fillRect(
+      bBoxX,
+      barY - countHeight - padding,
+      bMetrics.width + padding * 2,
+      countHeight
+    );
+    this.ctx.fillStyle = "#2196f3";
+    this.ctx.fillText(bText, bBoxX + padding, barY - padding);
 
     // Draw ratio and total with backgrounds
     this.ctx.textAlign = "center";
-    const ratio = total > 0 ? (mCount / fCount).toFixed(2) : "N/A";
-    const ratioText = `M/F: ${ratio}`;
+    const ratio = total > 0 ? (rCount / bCount).toFixed(2) : "N/A";
+    const ratioText = `R/B: ${ratio}`;
     const totalText = `Members: ${total}`;
 
     // Ratio text
@@ -161,7 +161,7 @@ export class CanvasVisualizer extends Visualizer {
       // Draw person
       this.ctx.beginPath();
       this.ctx.arc(x, y, 5, 0, Math.PI * 2);
-      this.ctx.fillStyle = person.trait === "M" ? "#2196f3" : "#e91e63";
+      this.ctx.fillStyle = person.trait === "R" ? "#e91e63" : "#2196f3";
       this.ctx.fill();
     });
   }

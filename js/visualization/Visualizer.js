@@ -29,20 +29,24 @@ export class Visualizer {
 
   // Update legend with current data
   updateLegend(traitCounts) {
-    document.querySelectorAll(".legend-item").forEach((item) => {
-      const label = item.querySelector(".legend-label");
-      const trait = label.textContent.trim().split(" ")[1]; // Get M or F from "Trait M" or "Trait F"
-      const count = traitCounts[trait];
+    document.querySelectorAll('.legend-item').forEach(item => {
+      const label = item.querySelector('.legend-label');
+      const trait = label.textContent.trim().split(' ')[1]; // Get R or B from "Trait R" or "Trait B"
+      const count = traitCounts[trait] || 0; // Default to 0 if count not found
 
       // Remove existing count if any
-      const existingCount = label.querySelector(".trait-count");
+      const existingCount = label.querySelector('.trait-count');
       if (existingCount) {
         existingCount.remove();
       }
 
-      const countSpan = document.createElement("span");
-      countSpan.className = "trait-count";
-      countSpan.textContent = count;
+      // Create and append the count with proper styling
+      const countSpan = document.createElement('span');
+      countSpan.className = 'trait-count';
+      countSpan.textContent = ` (${count})`;
+      countSpan.style.marginLeft = '4px';
+      label.style.color = trait === 'R' ? '#e91e63' : '#2196f3';
+      countSpan.style.color = trait === 'R' ? '#e91e63' : '#2196f3';
       label.appendChild(countSpan);
     });
   }

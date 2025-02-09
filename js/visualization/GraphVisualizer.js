@@ -85,7 +85,7 @@ export class GraphVisualizer extends Visualizer {
       elements.push({
         data: {
           id: `${person.id}`,
-          color: person.trait === "M" ? "#2196f3" : "#e91e63",
+          color: person.trait === "R" ? "#e91e63" : "#2196f3",
         },
       });
     });

@@ -1,7 +1,7 @@
 export const defaultConfig = {
   totalPeople: 100,
   totalClubs: 3,
-  traits: ["M", "F"],
+  traits: ["R", "B"],
   colors: {
     M: "#2196F3",
     F: "#E91E63",
