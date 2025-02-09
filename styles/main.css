@@ -192,12 +192,12 @@ canvas {
   gap: 8px;
 }
 
-.trait-M {
-  background-color: #2196f3;
+.trait-R {
+  background-color: #e91e63;
 }
 
-.trait-F {
-  background-color: #e91e63;
+.trait-B {
+  background-color: #2196f3;
 }
 
 .legend-label {

@@ -133,7 +133,7 @@ export class Dashboard {
     const people = Array(config.totalPeople)
       .fill()
       .map((_, i) => {
-        const trait = Math.random() < 0.5 ? "M" : "F";
+        const trait = Math.random() < 0.5 ? "R" : "B";
         return new Person(i, trait);
       });
 
