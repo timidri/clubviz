@@ -13,12 +13,6 @@ export class Dashboard {
     this.statsPanel = document.getElementById("stats");
     this.currentTurn = 0;
 
-    // Get container dimensions
-    const container = this.canvas.parentElement;
-    this.containerWidth = container.clientWidth;
-    this.containerHeight = container.clientHeight || this.containerWidth * 0.5;
-
-    this.updateCanvasSize();
     this.clubs = [];
     this.people = [];
     this.simulator = null;
@@ -33,34 +27,6 @@ export class Dashboard {
       this.height
     );
     this.bindControls();
-  }
-
-  updateCanvasSize() {
-    // Get the wrapper dimensions
-    const wrapper = this.canvas.parentElement;
-    const rect = wrapper.getBoundingClientRect();
-
-    // Set canvas size with proper DPI scaling
-    const dpr = window.devicePixelRatio || 1;
-    this.width = rect.width;
-    this.height = rect.height;
-
-    // Set the canvas dimensions accounting for DPI
-    this.canvas.width = this.width * dpr;
-    this.canvas.height = this.height * dpr;
-
-    // Set display size
-    this.canvas.style.width = `${this.width}px`;
-    this.canvas.style.height = `${this.height}px`;
-
-    // Scale context and reset transform
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.ctx.scale(dpr, dpr);
-
-    // Update visualizer dimensions
-    if (this.visualizer) {
-      this.visualizer.updateDimensions(this.width, this.height);
-    }
   }
 
   toggleTesting() {
@@ -121,7 +87,7 @@ export class Dashboard {
 
   applyParameters() {
     const config = getCurrentConfig();
-    
+
     // Add debug logging to verify config values
     console.log("Current configuration:", config);
 
@@ -179,14 +145,14 @@ export class Dashboard {
     this.clubs = clubs;
     this.people = people;
     const config = getCurrentConfig();
-    
+
     // Debug logging to verify config values before creating simulator
     console.log("Initializing simulator with config:", {
       leaveHighProb: config.leaveHighProb,
       leaveLowProb: config.leaveLowProb,
-      threshold: config.leaveProbabilityThreshold
+      threshold: config.leaveProbabilityThreshold,
     });
-    
+
     this.simulator = new Simulator(people, clubs, config);
     if (this.testingEnabled && this.tester) {
       this.simulator.setTester(this.tester);

@@ -80,15 +80,6 @@ export class Simulator {
 
   joinClub(person, club) {
     person.joinClub(club);
-
-    // Set position for visualization
-    const angle = Math.random() * Math.PI * 2;
-    const minDimension = Math.min(window.innerWidth, window.innerHeight);
-    const clubRadius = minDimension * 0.08;
-    const minRadius = clubRadius * 0.2;
-    const maxRadius = clubRadius * 0.6;
-    const radius = minRadius + Math.random() * (maxRadius - minRadius);
-    person.positions.set(club.id, { angle, radius });
   }
 
   leaveClub(person, club) {
@@ -101,27 +92,30 @@ export class Simulator {
     const traitCount = club.getTraitCount(person.trait);
     const totalCount = club.getMemberCount();
     const traitProportion = traitCount / (1.0 * totalCount);
-    
+
     // Ensure we have valid probability values, default to 1 and 0 if not set
-    const highProb = this.config.leaveHighProb !== undefined ? this.config.leaveHighProb : 1.0;
-    const lowProb = this.config.leaveLowProb !== undefined ? this.config.leaveLowProb : 0.0;
-    
-    const prob = traitProportion < this.config.leaveProbabilityThreshold 
-      ? highProb 
-      : lowProb;
-    
+    const highProb =
+      this.config.leaveHighProb !== undefined ? this.config.leaveHighProb : 1.0;
+    const lowProb =
+      this.config.leaveLowProb !== undefined ? this.config.leaveLowProb : 0.0;
+
+    const prob =
+      traitProportion < this.config.leaveProbabilityThreshold
+        ? highProb
+        : lowProb;
+
     // Debug logging
-    console.log(`Leave probability for ${person.id} in club ${club.id}:`, {
-      trait: person.trait,
-      traitCount,
-      totalCount,
-      proportion: traitProportion,
-      threshold: this.config.leaveProbabilityThreshold,
-      highProb,
-      lowProb,
-      probability: prob
-    });
-    
+    // console.log(`Leave probability for ${person.id} in club ${club.id}:`, {
+    //   trait: person.trait,
+    //   traitCount,
+    //   totalCount,
+    //   proportion: traitProportion,
+    //   threshold: this.config.leaveProbabilityThreshold,
+    //   highProb,
+    //   lowProb,
+    //   probability: prob
+    // });
+
     return prob;
   }
 } // end of class

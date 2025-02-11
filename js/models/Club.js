@@ -3,8 +3,6 @@ export class Club {
     this.id = id;
     this.members = new Set();
     this.traitCounts = new Map();
-    this.x = 0;
-    this.y = 0;
   }
 
   isMember(person) {
