@@ -23,10 +23,15 @@ export class Person {
     if (this.canJoinClub(club)) {
       club.addMember(this);
       this.clubs.add(club);
-      this.justJoined.add(club.id); // Track that we just joined this club
-      // Use larger radius for dot placement
+      this.justJoined.add(club.id);
+      
       const angle = Math.random() * Math.PI * 2;
-      const radius = 20 + Math.random() * 50; // Min 20px from center, max 70px
+      const minDimension = Math.min(window.innerWidth, window.innerHeight);
+      const clubRadius = minDimension * 0.08; // Match the radius used in CanvasVisualizer
+      const minRadius = clubRadius * 0.2; // 20% of club radius
+      const maxRadius = clubRadius * 0.7; // 70% of club radius to keep some padding
+      const radius = minRadius + Math.random() * (maxRadius - minRadius);
+      
       this.positions.set(club.id, { angle, radius });
       return true;
     }
