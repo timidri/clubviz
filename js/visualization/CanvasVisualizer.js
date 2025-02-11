@@ -82,36 +82,29 @@ export class CanvasVisualizer extends Visualizer {
     const countHeight = 14;
     this.ctx.font = "12px Arial";
 
-    // Draw trait counts with background
-    const rText = `R: ${rCount}`;
-    const bText = `B: ${bCount}`;
-
-    // Left side (M count)
-    this.ctx.textAlign = "left";
-    const rMetrics = this.ctx.measureText(rText);
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    this.ctx.fillRect(
-      barX - padding,
-      barY - countHeight - padding,
-      rMetrics.width + padding * 2,
-      countHeight
-    );
+    // Draw trait counts with colored circles and numbers
+    const circleRadius = 6;
+    const textOffset = 15;
+    
+    // Left side count with red circle
+    this.ctx.beginPath();
+    this.ctx.arc(barX, barY - padding - circleRadius, circleRadius, 0, Math.PI * 2);
     this.ctx.fillStyle = "#e91e63";
-    this.ctx.fillText(rText, barX, barY - padding);
-
-    // Right side (F count)
+    this.ctx.fill();
+    
     this.ctx.textAlign = "left";
-    const bMetrics = this.ctx.measureText(bText);
-    const bBoxX = barX + barWidth - bMetrics.width - padding * 2;
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    this.ctx.fillRect(
-      bBoxX,
-      barY - countHeight - padding,
-      bMetrics.width + padding * 2,
-      countHeight
-    );
+    this.ctx.fillStyle = "black";
+    this.ctx.fillText(rCount, barX + textOffset, barY - padding);
+
+    // Right side count with blue circle
+    this.ctx.beginPath();
+    this.ctx.arc(barX + barWidth - circleRadius * 2, barY - padding - circleRadius, circleRadius, 0, Math.PI * 2);
     this.ctx.fillStyle = "#2196f3";
-    this.ctx.fillText(bText, bBoxX + padding, barY - padding);
+    this.ctx.fill();
+    
+    this.ctx.textAlign = "left";
+    this.ctx.fillStyle = "black";
+    this.ctx.fillText(bCount, barX + barWidth - circleRadius * 2 + textOffset, barY - padding);
 
     // Draw ratio and total with backgrounds
     this.ctx.textAlign = "center";
