@@ -11,14 +11,28 @@ export class CanvasVisualizer extends Visualizer {
     this.clubs = clubs;
     this.people = people;
 
-    // Position clubs with proper spacing
-    const padding = 100;
+    // Calculate grid dimensions with optimized padding
+    const padding = 100; // Reduced padding for better space utilization
+    const clubRadius = 80;
+    const minSpacing = clubRadius * 3; // Reduced minimum spacing between clubs
     const usableWidth = this.width - padding * 2;
-    const spacing = usableWidth / (clubs.length - 1 || 1);
+    const usableHeight = this.height - padding * 2;
 
+    // Calculate optimal number of columns based on available width and number of clubs
+    const maxColumns = Math.floor(usableWidth / minSpacing);
+    const numColumns = Math.min(maxColumns, Math.ceil(Math.sqrt(clubs.length)));
+    const numRows = Math.ceil(clubs.length / numColumns);
+
+    // Calculate actual spacing with dynamic adjustment based on available space
+    const horizontalSpacing = usableWidth / Math.max(numColumns - 1, 1);
+    const verticalSpacing = usableHeight / Math.max(numRows - 1, 1);
+
+    // Position clubs in grid with adjusted spacing
     clubs.forEach((club, i) => {
-      club.x = padding + spacing * i;
-      club.y = this.height / 2;
+      const row = Math.floor(i / numColumns);
+      const col = i % numColumns;
+      club.x = padding + col * horizontalSpacing;
+      club.y = padding + row * verticalSpacing + 50; // Added vertical offset
     });
 
     this.draw();
@@ -56,11 +70,11 @@ export class CanvasVisualizer extends Visualizer {
     const bCount = club.getTraitCount("B");
     const total = club.getMemberCount();
 
-    // Bar chart positioning
+    // Bar chart positioning - moved higher above the circle
     const barWidth = 60;
     const barHeight = 20;
     const barX = club.x - barWidth / 2;
-    const barY = club.y - 120;
+    const barY = club.y - 140; // Increased distance from circle center
 
     // Draw background bar
     this.ctx.fillStyle = "#f0f0f0";
@@ -78,50 +92,68 @@ export class CanvasVisualizer extends Visualizer {
     }
 
     // Text settings
-    const padding = 4;
-    const countHeight = 14;
-    this.ctx.font = "12px Arial";
+    const padding = 6;
+    const countHeight = 18;
+    this.ctx.font = "14px Arial";
 
-    // Draw trait counts on the sides of the bar
-    this.ctx.textAlign = "right";
+    // Draw trait counts on the sides of the bar with background
     // Left side count (R) in red
+    const rCountText = rCount.toString();
+    const rCountMetrics = this.ctx.measureText(rCountText);
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    this.ctx.fillRect(
+      barX - padding - rCountMetrics.width - padding,
+      barY + barHeight/2 - countHeight/2,
+      rCountMetrics.width + padding * 2,
+      countHeight
+    );
+    this.ctx.textAlign = "right";
     this.ctx.fillStyle = "#e91e63";
-    this.ctx.fillText(rCount, barX - padding, barY + barHeight/2 + 4);
+    this.ctx.fillText(rCount, barX - padding, barY + barHeight/2 + 5);
 
     // Right side count (B) in blue
+    const bCountText = bCount.toString();
+    const bCountMetrics = this.ctx.measureText(bCountText);
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    this.ctx.fillRect(
+      barX + barWidth + padding,
+      barY + barHeight/2 - countHeight/2,
+      bCountMetrics.width + padding * 2,
+      countHeight
+    );
     this.ctx.textAlign = "left";
     this.ctx.fillStyle = "#2196f3";
-    this.ctx.fillText(bCount, barX + barWidth + padding, barY + barHeight/2 + 4);
+    this.ctx.fillText(bCount, barX + barWidth + padding, barY + barHeight/2 + 5);
 
-    // Draw ratio and total with backgrounds
+    // Draw ratio and total with enhanced backgrounds - moved higher
     this.ctx.textAlign = "center";
     const ratio = total > 0 ? (rCount / bCount).toFixed(2) : "N/A";
     const ratioText = `R/B: ${ratio}`;
     const totalText = `Members: ${total}`;
 
-    // Ratio text
+    // Ratio text with enhanced visibility
     const ratioMetrics = this.ctx.measureText(ratioText);
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
     this.ctx.fillRect(
       club.x - ratioMetrics.width / 2 - padding,
-      barY - 50,
+      barY - 62, // Increased distance
       ratioMetrics.width + padding * 2,
       countHeight
     );
     this.ctx.fillStyle = "black";
-    this.ctx.fillText(ratioText, club.x, barY - 40);
+    this.ctx.fillText(ratioText, club.x, barY - 50); // Increased distance
 
-    // Total members text
+    // Total members text with enhanced visibility
     const totalMetrics = this.ctx.measureText(totalText);
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
     this.ctx.fillRect(
       club.x - totalMetrics.width / 2 - padding,
-      barY - 35,
+      barY - 42, // Increased distance
       totalMetrics.width + padding * 2,
       countHeight
     );
     this.ctx.fillStyle = "black";
-    this.ctx.fillText(totalText, club.x, barY - 25);
+    this.ctx.fillText(totalText, club.x, barY - 30); // Increased distance
 
     // Draw club label below circle
     this.ctx.font = "14px Arial";
