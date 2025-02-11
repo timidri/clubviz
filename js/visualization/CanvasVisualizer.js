@@ -11,28 +11,43 @@ export class CanvasVisualizer extends Visualizer {
     this.clubs = clubs;
     this.people = people;
 
-    // Calculate grid dimensions with optimized padding
-    const padding = 100; // Reduced padding for better space utilization
+    // Minimum required space for each club
     const clubRadius = 80;
-    const minSpacing = clubRadius * 3; // Reduced minimum spacing between clubs
+    const statsHeight = 180;
+    const labelHeight = 40;
+    const padding = 180;
+    const minClubSpacing = clubRadius * 4; // Minimum space between club centers
+
+    // Calculate optimal grid layout
+    const totalClubs = clubs.length;
+    const numColumns = Math.ceil(Math.sqrt(totalClubs));
+    const numRows = Math.ceil(totalClubs / numColumns);
+
+    // Calculate required canvas dimensions
+    const requiredWidth = (numColumns * minClubSpacing) + (padding * 2);
+    const requiredHeight = (numRows * minClubSpacing) + (padding * 2);
+
+    // Adjust canvas size if needed
+    if (requiredWidth > this.width || requiredHeight > this.height) {
+      this.canvas.width = Math.max(this.width, requiredWidth);
+      this.canvas.height = Math.max(this.height, requiredHeight);
+      this.width = this.canvas.width;
+      this.height = this.canvas.height;
+    }
+
+    // Recalculate spacing with new dimensions
     const usableWidth = this.width - padding * 2;
     const usableHeight = this.height - padding * 2;
+    const horizontalSpacing = usableWidth / numColumns;
+    const verticalSpacing = usableHeight / numRows;
 
-    // Calculate optimal number of columns based on available width and number of clubs
-    const maxColumns = Math.floor(usableWidth / minSpacing);
-    const numColumns = Math.min(maxColumns, Math.ceil(Math.sqrt(clubs.length)));
-    const numRows = Math.ceil(clubs.length / numColumns);
-
-    // Calculate actual spacing with dynamic adjustment based on available space
-    const horizontalSpacing = usableWidth / Math.max(numColumns - 1, 1);
-    const verticalSpacing = usableHeight / Math.max(numRows - 1, 1);
-
-    // Position clubs in grid with adjusted spacing
+    // Position clubs in grid
     clubs.forEach((club, i) => {
       const row = Math.floor(i / numColumns);
       const col = i % numColumns;
-      club.x = padding + col * horizontalSpacing;
-      club.y = padding + row * verticalSpacing + 50; // Added vertical offset
+      
+      club.x = padding + horizontalSpacing * (0.5 + col);
+      club.y = padding + verticalSpacing * (0.5 + row);
     });
 
     this.draw();
