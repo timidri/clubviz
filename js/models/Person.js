@@ -29,7 +29,7 @@ export class Person {
       const minDimension = Math.min(window.innerWidth, window.innerHeight);
       const clubRadius = minDimension * 0.08; // Match the radius used in CanvasVisualizer
       const minRadius = clubRadius * 0.2; // 20% of club radius
-      const maxRadius = clubRadius * 0.7; // 70% of club radius to keep some padding
+      const maxRadius = clubRadius * 0.6; // 60% of club radius for better padding
       const radius = minRadius + Math.random() * (maxRadius - minRadius);
       
       this.positions.set(club.id, { angle, radius });

@@ -86,7 +86,7 @@ export class Simulator {
     const minDimension = Math.min(window.innerWidth, window.innerHeight);
     const clubRadius = minDimension * 0.08;
     const minRadius = clubRadius * 0.2;
-    const maxRadius = clubRadius * 0.7;
+    const maxRadius = clubRadius * 0.6;
     const radius = minRadius + Math.random() * (maxRadius - minRadius);
     person.positions.set(club.id, { angle, radius });
   }
