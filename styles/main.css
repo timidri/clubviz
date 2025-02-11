@@ -71,6 +71,46 @@ h1 {
   transition: border-color 0.2s;
 }
 
+.parameter-group input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  border: none;
+  padding: 0;
+}
+
+.parameter-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #4caf50;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.parameter-group input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #4caf50;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+
+.parameter-group input[type="range"]:focus {
+  outline: none;
+}
+
+.parameter-group input[type="range"]::-webkit-slider-thumb:hover,
+.parameter-group input[type="range"]::-moz-range-thumb:hover {
+  background: #45a049;
+}
+
 .parameter-group input:focus {
   border-color: #4caf50;
   outline: none;
@@ -98,6 +138,7 @@ h1 {
 .control-panel {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
 }
 
@@ -342,4 +383,59 @@ footer {
     display: block;
     margin-bottom: 10px;
   }
+}
+
+input[type="range"] {
+  width: 100%;
+  margin: 8px 0;
+}
+
+#traitRatioValue {
+  display: inline-block;
+  margin-left: 8px;
+  min-width: 48px;
+}
+
+.parameter-group input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  outline: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.parameter-group input[type="range"]:hover {
+  opacity: 1;
+}
+
+.parameter-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #4caf50;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.parameter-group input[type="range"]::-webkit-slider-thumb:hover {
+  background: #388e3c;
+}
+
+.parameter-group input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #4caf50;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+
+.parameter-group input[type="range"]::-moz-range-thumb:hover {
+  background: #388e3c;
 }

@@ -23,6 +23,20 @@
               </div>
 
               <div class="parameter-group">
+                <label for="traitRatio">Initial Trait R Proportion:</label>
+                <input
+                  type="range"
+                  id="traitRatio"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value="0.5"
+                />
+                <span id="traitRatioValue">50%</span>
+                <div class="note">Proportion of population with Trait R</div>
+              </div>
+
+              <div class="parameter-group">
                 <label for="totalClubs">Number of Clubs:</label>
                 <input type="number" id="totalClubs" min="1" value="3" />
                 <div class="note">(This value represents C in formulas)</div>

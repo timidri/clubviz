@@ -5,6 +5,7 @@ import { Club } from "../models/Club.js";
 import { Person } from "../models/Person.js";
 import { CanvasVisualizer } from "./CanvasVisualizer.js";
 import { GraphVisualizer } from "./GraphVisualizer.js";
+import { Parameters } from './Parameters.js';
 
 export class Dashboard {
   constructor() {
@@ -26,6 +27,15 @@ export class Dashboard {
       this.width,
       this.height
     );
+    
+    // Add trait ratio slider listener
+    const traitRatioSlider = document.getElementById('traitRatio');
+    const traitRatioValue = document.getElementById('traitRatioValue');
+    traitRatioSlider.addEventListener('input', () => {
+      const value = (traitRatioSlider.value * 100).toFixed(0);
+      traitRatioValue.textContent = `${value}%`;
+    });
+
     this.bindControls();
   }
 
@@ -87,20 +97,21 @@ export class Dashboard {
 
   applyParameters() {
     const config = getCurrentConfig();
-
-    // Add debug logging to verify config values
-    console.log("Current configuration:", config);
-
+    
+    // Get trait ratio from the slider
+    const traitRatioSlider = document.getElementById('traitRatio');
+    const traitRatio = parseFloat(traitRatioSlider.value);
+    
     // Create clubs
     const clubs = Array(config.totalClubs)
       .fill()
       .map((_, i) => new Club(i));
 
-    // Create people with random traits but no initial club memberships
+    // Create people with trait distribution based on slider value
     const people = Array(config.totalPeople)
       .fill()
       .map((_, i) => {
-        const trait = Math.random() < 0.5 ? "R" : "B";
+        const trait = Math.random() < traitRatio ? "R" : "B";
         return new Person(i, trait);
       });
 
