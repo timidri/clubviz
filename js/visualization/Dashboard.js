@@ -42,19 +42,20 @@ export class Dashboard {
 
     // Set canvas size with proper DPI scaling
     const dpr = window.devicePixelRatio || 1;
-    this.canvas.width = rect.width * dpr;
-    this.canvas.height = rect.height * dpr;
-
-    // Set display size
-    this.canvas.style.width = `${rect.width}px`;
-    this.canvas.style.height = `${rect.height}px`;
-
-    // Scale context
-    this.ctx.scale(dpr, dpr);
-
-    // Update internal dimensions
     this.width = rect.width;
     this.height = rect.height;
+
+    // Set the canvas dimensions accounting for DPI
+    this.canvas.width = this.width * dpr;
+    this.canvas.height = this.height * dpr;
+
+    // Set display size
+    this.canvas.style.width = `${this.width}px`;
+    this.canvas.style.height = `${this.height}px`;
+
+    // Scale context and reset transform
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx.scale(dpr, dpr);
 
     // Update visualizer dimensions
     if (this.visualizer) {

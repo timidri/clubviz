@@ -11,37 +11,23 @@ export class CanvasVisualizer extends Visualizer {
     this.clubs = clubs;
     this.people = people;
 
-    // Minimum required space for each club
-    const clubRadius = 80;
-    const statsHeight = 180;
-    const labelHeight = 40;
-    const padding = 180;
-    const minClubSpacing = clubRadius * 4; // Minimum space between club centers
+    // Calculate base dimensions for visualization
+    const minDimension = Math.min(this.width, this.height);
+    const clubRadius = minDimension * 0.08; // 8% of the smaller dimension
+    const padding = minDimension * 0.15; // 15% of the smaller dimension
+    const minClubSpacing = clubRadius * 4;
 
     // Calculate optimal grid layout
     const totalClubs = clubs.length;
-    const numColumns = Math.ceil(Math.sqrt(totalClubs));
+    const aspectRatio = this.width / this.height;
+    const numColumns = Math.ceil(Math.sqrt(totalClubs * aspectRatio));
     const numRows = Math.ceil(totalClubs / numColumns);
 
-    // Calculate required canvas dimensions
-    const requiredWidth = (numColumns * minClubSpacing) + (padding * 2);
-    const requiredHeight = (numRows * minClubSpacing) + (padding * 2);
+    // Calculate spacing to maintain aspect ratio
+    const horizontalSpacing = (this.width - padding * 2) / Math.max(numColumns, 1);
+    const verticalSpacing = (this.height - padding * 2) / Math.max(numRows, 1);
 
-    // Adjust canvas size if needed
-    if (requiredWidth > this.width || requiredHeight > this.height) {
-      this.canvas.width = Math.max(this.width, requiredWidth);
-      this.canvas.height = Math.max(this.height, requiredHeight);
-      this.width = this.canvas.width;
-      this.height = this.canvas.height;
-    }
-
-    // Recalculate spacing with new dimensions
-    const usableWidth = this.width - padding * 2;
-    const usableHeight = this.height - padding * 2;
-    const horizontalSpacing = usableWidth / numColumns;
-    const verticalSpacing = usableHeight / numRows;
-
-    // Position clubs in grid
+    // Position clubs in grid with proper spacing
     clubs.forEach((club, i) => {
       const row = Math.floor(i / numColumns);
       const col = i % numColumns;
@@ -72,11 +58,18 @@ export class CanvasVisualizer extends Visualizer {
   }
 
   drawClub(club) {
+    // Use consistent radius based on smaller canvas dimension
+    const minDimension = Math.min(this.width, this.height);
+    const radius = minDimension * 0.08;
+    const barWidth = radius * 0.75;
+    const barHeight = radius * 0.25;
+    const barY = club.y - radius * 1.75;
+
     // Draw club circle
     this.ctx.beginPath();
-    this.ctx.arc(club.x, club.y, 80, 0, Math.PI * 2);
+    this.ctx.arc(club.x, club.y, radius, 0, Math.PI * 2);
     this.ctx.strokeStyle = "#ccc";
-    this.ctx.lineWidth = 2;
+    this.ctx.lineWidth = minDimension * 0.002; // Scale line width with canvas size
     this.ctx.fillStyle = "white";
     this.ctx.fill();
     this.ctx.stroke();
@@ -85,11 +78,8 @@ export class CanvasVisualizer extends Visualizer {
     const bCount = club.getTraitCount("B");
     const total = club.getMemberCount();
 
-    // Bar chart positioning - moved higher above the circle
-    const barWidth = 60;
-    const barHeight = 20;
+    // Bar chart positioning
     const barX = club.x - barWidth / 2;
-    const barY = club.y - 140; // Increased distance from circle center
 
     // Draw background bar
     this.ctx.fillStyle = "#f0f0f0";
@@ -106,75 +96,56 @@ export class CanvasVisualizer extends Visualizer {
       this.ctx.fillRect(barX + rWidth, barY, bWidth, barHeight);
     }
 
-    // Text settings
-    const padding = 6;
-    const countHeight = 18;
-    this.ctx.font = "14px Arial";
+    // Scale text and padding based on canvas size
+    const padding = minDimension * 0.005;
+    const countHeight = minDimension * 0.015;
+    const fontSize = Math.max(12, Math.floor(minDimension * 0.012));
+    this.ctx.font = `${fontSize}px Arial`;
 
-    // Draw trait counts on the sides of the bar with background
-    // Left side count (R) in red
-    const rCountText = rCount.toString();
-    const rCountMetrics = this.ctx.measureText(rCountText);
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-    this.ctx.fillRect(
-      barX - padding - rCountMetrics.width - padding,
-      barY + barHeight/2 - countHeight/2,
-      rCountMetrics.width + padding * 2,
-      countHeight
-    );
-    this.ctx.textAlign = "right";
-    this.ctx.fillStyle = "#e91e63";
-    this.ctx.fillText(rCount, barX - padding, barY + barHeight/2 + 5);
+    // Draw counts with consistent scaling
+    this.drawCountLabel(rCount, barX - padding, barY, countHeight, "#e91e63", "right");
+    this.drawCountLabel(bCount, barX + barWidth + padding, barY, countHeight, "#2196f3", "left");
 
-    // Right side count (B) in blue
-    const bCountText = bCount.toString();
-    const bCountMetrics = this.ctx.measureText(bCountText);
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-    this.ctx.fillRect(
-      barX + barWidth + padding,
-      barY + barHeight/2 - countHeight/2,
-      bCountMetrics.width + padding * 2,
-      countHeight
-    );
-    this.ctx.textAlign = "left";
-    this.ctx.fillStyle = "#2196f3";
-    this.ctx.fillText(bCount, barX + barWidth + padding, barY + barHeight/2 + 5);
-
-    // Draw ratio and total with enhanced backgrounds - moved higher
-    this.ctx.textAlign = "center";
+    // Draw ratio and total
     const ratio = total > 0 ? (rCount / bCount).toFixed(2) : "N/A";
-    const ratioText = `R/B: ${ratio}`;
-    const totalText = `Members: ${total}`;
+    this.drawInfoLabel(`R/B: ${ratio}`, club.x, barY - radius * 0.8, countHeight);
+    this.drawInfoLabel(`Members: ${total}`, club.x, barY - radius * 0.5, countHeight);
 
-    // Ratio text with enhanced visibility
-    const ratioMetrics = this.ctx.measureText(ratioText);
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-    this.ctx.fillRect(
-      club.x - ratioMetrics.width / 2 - padding,
-      barY - 62, // Increased distance
-      ratioMetrics.width + padding * 2,
-      countHeight
-    );
-    this.ctx.fillStyle = "black";
-    this.ctx.fillText(ratioText, club.x, barY - 50); // Increased distance
-
-    // Total members text with enhanced visibility
-    const totalMetrics = this.ctx.measureText(totalText);
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-    this.ctx.fillRect(
-      club.x - totalMetrics.width / 2 - padding,
-      barY - 42, // Increased distance
-      totalMetrics.width + padding * 2,
-      countHeight
-    );
-    this.ctx.fillStyle = "black";
-    this.ctx.fillText(totalText, club.x, barY - 30); // Increased distance
-
-    // Draw club label below circle
-    this.ctx.font = "14px Arial";
+    // Draw club label
+    this.ctx.font = `${fontSize}px Arial`;
     this.ctx.fillStyle = "black";
     this.ctx.textAlign = "center";
-    this.ctx.fillText(`Club ${club.id}`, club.x, club.y + 100);
+    this.ctx.fillText(`Club ${club.id}`, club.x, club.y + radius * 1.25);
+  }
+
+  drawCountLabel(count, x, y, height, color, align) {
+    const text = count.toString();
+    const metrics = this.ctx.measureText(text);
+    const padding = height * 0.3;
+
+    // Draw background
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    const bgX = align === "right" ? x - metrics.width - padding * 2 : x;
+    this.ctx.fillRect(bgX, y + height/2 - height/2, metrics.width + padding * 2, height);
+
+    // Draw text
+    this.ctx.textAlign = align;
+    this.ctx.fillStyle = color;
+    this.ctx.fillText(text, x, y + height/2 + height/3);
+  }
+
+  drawInfoLabel(text, x, y, height) {
+    const metrics = this.ctx.measureText(text);
+    const padding = height * 0.3;
+
+    // Draw background
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    this.ctx.fillRect(x - metrics.width/2 - padding, y - height/2, metrics.width + padding * 2, height);
+
+    // Draw text
+    this.ctx.textAlign = "center";
+    this.ctx.fillStyle = "black";
+    this.ctx.fillText(text, x, y + height/3);
   }
 
   drawPerson(person) {
