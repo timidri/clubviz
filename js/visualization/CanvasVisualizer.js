@@ -82,29 +82,16 @@ export class CanvasVisualizer extends Visualizer {
     const countHeight = 14;
     this.ctx.font = "12px Arial";
 
-    // Draw trait counts with colored circles and numbers
-    const circleRadius = 6;
-    const textOffset = 15;
-    
-    // Left side count with red circle
-    this.ctx.beginPath();
-    this.ctx.arc(barX, barY - padding - circleRadius, circleRadius, 0, Math.PI * 2);
+    // Draw trait counts on the sides of the bar
+    this.ctx.textAlign = "right";
+    // Left side count (R) in red
     this.ctx.fillStyle = "#e91e63";
-    this.ctx.fill();
-    
-    this.ctx.textAlign = "left";
-    this.ctx.fillStyle = "black";
-    this.ctx.fillText(rCount, barX + textOffset, barY - padding);
+    this.ctx.fillText(rCount, barX - padding, barY + barHeight/2 + 4);
 
-    // Right side count with blue circle
-    this.ctx.beginPath();
-    this.ctx.arc(barX + barWidth - circleRadius * 2, barY - padding - circleRadius, circleRadius, 0, Math.PI * 2);
-    this.ctx.fillStyle = "#2196f3";
-    this.ctx.fill();
-    
+    // Right side count (B) in blue
     this.ctx.textAlign = "left";
-    this.ctx.fillStyle = "black";
-    this.ctx.fillText(bCount, barX + barWidth - circleRadius * 2 + textOffset, barY - padding);
+    this.ctx.fillStyle = "#2196f3";
+    this.ctx.fillText(bCount, barX + barWidth + padding, barY + barHeight/2 + 4);
 
     // Draw ratio and total with backgrounds
     this.ctx.textAlign = "center";
