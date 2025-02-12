@@ -16,37 +16,31 @@ export class CanvasVisualizer extends Visualizer {
     // Update canvas size first
     this.updateCanvasSize();
 
-    // Calculate these values once and keep them fixed
-    const baseMinDimension = Math.min(this.width, this.height);
-    const fixedClubRadius = baseMinDimension * 0.1;
-    this.clubRadius = fixedClubRadius;
-
-    // Calculate base dimensions for visualization
-    const padding = baseMinDimension * 0.15;
-    const numColumns = Math.ceil(
-      Math.sqrt(clubs.length * (this.width / this.height))
-    );
-    const numRows = Math.ceil(clubs.length / numColumns);
-
-    // Calculate required height and resize canvas if needed
-    const minRowHeight = fixedClubRadius * 4;
-    const requiredHeight = padding * 2 + minRowHeight * numRows;
-
-    if (requiredHeight > this.height) {
-      const dpr = window.devicePixelRatio || 1;
-      this.canvas.style.height = `${requiredHeight}px`;
-      this.canvas.height = requiredHeight * dpr;
-      this.height = requiredHeight;
-      // Don't recalculate minDimension or clubRadius here
-
-      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-      this.ctx.scale(dpr, dpr);
+    // Calculate optimal grid layout
+    const aspectRatio = this.width / this.height;
+    const totalClubs = clubs.length;
+    
+    // Calculate optimal number of columns based on aspect ratio
+    let numColumns = Math.ceil(Math.sqrt(totalClubs * aspectRatio));
+    let numRows = Math.ceil(totalClubs / numColumns);
+    
+    // Adjust columns if too many rows
+    if (numRows > numColumns * 1.5) {
+      numColumns++;
+      numRows = Math.ceil(totalClubs / numColumns);
     }
 
-    // Calculate spacing
-    const horizontalSpacing =
-      (this.width - padding * 2) / Math.max(numColumns, 1);
-    const verticalSpacing = (this.height - padding * 2) / Math.max(numRows, 1);
+    // Calculate optimal club size and padding
+    const minPadding = Math.min(this.width, this.height) * 0.05;
+    const maxClubWidth = (this.width - minPadding * 2) / numColumns;
+    const maxClubHeight = (this.height - minPadding * 2) / numRows;
+    
+    // Set club radius based on available space
+    this.clubRadius = Math.min(maxClubWidth, maxClubHeight) * 0.35;
+    
+    // Calculate actual padding to center the grid
+    const horizontalPadding = (this.width - (maxClubWidth * numColumns)) / 2;
+    const verticalPadding = (this.height - (maxClubHeight * numRows)) / 2;
 
     // Position clubs in grid
     clubs.forEach((club, i) => {
@@ -54,8 +48,8 @@ export class CanvasVisualizer extends Visualizer {
       const col = i % numColumns;
 
       this.clubPositions.set(club.id, {
-        x: padding + horizontalSpacing * (0.5 + col),
-        y: padding + verticalSpacing * (0.5 + row),
+        x: horizontalPadding + maxClubWidth * (0.5 + col),
+        y: verticalPadding + maxClubHeight * (0.5 + row)
       });
     });
 
