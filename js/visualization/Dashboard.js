@@ -108,13 +108,23 @@ export class Dashboard {
       .fill()
       .map((_, i) => new Club(i));
 
-    // Create people with trait distribution based on slider value
-    const people = Array(config.totalPeople)
-      .fill()
-      .map((_, i) => {
-        const trait = Math.random() < traitRatio ? "R" : "B";
-        return new Person(i, trait);
-      });
+    // Calculate exact number of people for each trait
+    const totalPeople = config.totalPeople;
+    const rCount = Math.round(totalPeople * traitRatio);
+    const bCount = totalPeople - rCount;
+
+    // Create people array with exact trait distribution
+    const people = [];
+    
+    // Add R trait people
+    for (let i = 0; i < rCount; i++) {
+      people.push(new Person(i, "R"));
+    }
+    
+    // Add B trait people
+    for (let i = rCount; i < totalPeople; i++) {
+      people.push(new Person(i, "B"));
+    }
 
     // Initialize dashboard with clubs and people
     this.initialize(clubs, people);
