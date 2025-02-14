@@ -19,11 +19,11 @@ export class CanvasVisualizer extends Visualizer {
     // Calculate optimal grid layout
     const aspectRatio = this.width / this.height;
     const totalClubs = clubs.length;
-    
+
     // Calculate optimal number of columns based on aspect ratio
     let numColumns = Math.ceil(Math.sqrt(totalClubs * aspectRatio));
     let numRows = Math.ceil(totalClubs / numColumns);
-    
+
     // Adjust columns if too many rows
     if (numRows > numColumns * 1.5) {
       numColumns++;
@@ -34,13 +34,13 @@ export class CanvasVisualizer extends Visualizer {
     const minPadding = Math.min(this.width, this.height) * 0.05;
     const maxClubWidth = (this.width - minPadding * 2) / numColumns;
     const maxClubHeight = (this.height - minPadding * 2) / numRows;
-    
+
     // Set club radius based on available space
-    this.clubRadius = Math.min(maxClubWidth, maxClubHeight) * 0.35;
-    
+    this.clubRadius = Math.min(maxClubWidth, maxClubHeight) * 0.3;
+
     // Calculate actual padding to center the grid
-    const horizontalPadding = (this.width - (maxClubWidth * numColumns)) / 2;
-    const verticalPadding = (this.height - (maxClubHeight * numRows)) / 2;
+    const horizontalPadding = (this.width - maxClubWidth * numColumns) / 2;
+    const verticalPadding = (this.height - maxClubHeight * numRows) / 2;
 
     // Position clubs in grid
     clubs.forEach((club, i) => {
@@ -49,7 +49,7 @@ export class CanvasVisualizer extends Visualizer {
 
       this.clubPositions.set(club.id, {
         x: horizontalPadding + maxClubWidth * (0.5 + col),
-        y: verticalPadding + maxClubHeight * (0.5 + row)
+        y: verticalPadding + maxClubHeight * (0.5 + row),
       });
     });
 
@@ -225,8 +225,14 @@ export class CanvasVisualizer extends Visualizer {
       "left"
     );
 
-    const ratio = total > 0 ? (rCount / bCount).toFixed(2) : "N/A";
-    this.drawInfoLabel(`R/B: ${ratio}`, x, y - radius * 0.45, countHeight);
+    const ratio = rCount > bCount ? bCount / rCount : rCount / bCount;
+    const displayRatio = total > 0 ? ratio.toFixed(2) : "N/A";
+    this.drawInfoLabel(
+      `TR: ${displayRatio}`,
+      x,
+      y - radius * 0.45,
+      countHeight
+    );
     this.drawInfoLabel(`Members: ${total}`, x, y - radius * 0.2, countHeight);
   }
 

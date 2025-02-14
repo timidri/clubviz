@@ -5,7 +5,7 @@ import { Club } from "../models/Club.js";
 import { Person } from "../models/Person.js";
 import { CanvasVisualizer } from "./CanvasVisualizer.js";
 import { GraphVisualizer } from "./GraphVisualizer.js";
-//import { Parameters } from './Parameters.js';
+import { ChartVisualizer } from "./ChartVisualizer.js";
 
 export class Dashboard {
   constructor() {
@@ -27,8 +27,7 @@ export class Dashboard {
       this.width,
       this.height
     );
-    
-   
+
     this.bindControls();
   }
 
@@ -88,9 +87,9 @@ export class Dashboard {
       .addEventListener("change", (e) => this.switchVisualizer(e.target.value));
 
     // Add trait ratio slider listener
-    const traitRatioSlider = document.getElementById('traitRatio');
-    const traitRatioValue = document.getElementById('traitRatioValue');
-    traitRatioSlider.addEventListener('input', () => {
+    const traitRatioSlider = document.getElementById("traitRatio");
+    const traitRatioValue = document.getElementById("traitRatioValue");
+    traitRatioSlider.addEventListener("input", () => {
       const value = (traitRatioSlider.value * 100).toFixed(0);
       traitRatioValue.textContent = `${value}%`;
     });
@@ -98,11 +97,11 @@ export class Dashboard {
 
   applyParameters() {
     const config = getCurrentConfig();
-    
+
     // Get trait ratio from the slider
-    const traitRatioSlider = document.getElementById('traitRatio');
+    const traitRatioSlider = document.getElementById("traitRatio");
     const traitRatio = parseFloat(traitRatioSlider.value);
-    
+
     // Create clubs
     const clubs = Array(config.totalClubs)
       .fill()
@@ -115,12 +114,12 @@ export class Dashboard {
 
     // Create people array with exact trait distribution
     const people = [];
-    
+
     // Add R trait people
     for (let i = 0; i < rCount; i++) {
       people.push(new Person(i, "R"));
     }
-    
+
     // Add B trait people
     for (let i = rCount; i < totalPeople; i++) {
       people.push(new Person(i, "B"));
@@ -140,6 +139,9 @@ export class Dashboard {
       this.simulator.takeTurn();
       this.currentTurn++;
       document.getElementById("turnCounter").textContent = this.currentTurn;
+      if (this.visualizer instanceof ChartVisualizer) {
+        this.visualizer.updateData(this.currentTurn);
+      }
     }
     this.draw();
 
@@ -198,6 +200,13 @@ export class Dashboard {
       );
     } else if (type === "graph") {
       newVisualizer = new GraphVisualizer(
+        this.canvas,
+        this.ctx,
+        this.width,
+        this.height
+      );
+    } else if (type === "chart") {
+      newVisualizer = new ChartVisualizer(
         this.canvas,
         this.ctx,
         this.width,
