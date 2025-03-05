@@ -27,15 +27,22 @@ export class ChartVisualizer extends Visualizer {
     this.canvas.style.display = "none";
     this.chartContainer.style.display = "block";
 
+    // Clear existing data
+    this.clubData.clear();
+
     // Initialize data structure for each club
     this.clubs.forEach((club) => {
-      if (!this.clubData.has(club.id)) {
-        this.clubData.set(club.id, {
-          labels: [0], // Turn numbers
-          ratios: [0], // Trait ratios
-        });
-      }
+      this.clubData.set(club.id, {
+        labels: [0], // Turn numbers
+        ratios: [0], // Trait ratios
+      });
     });
+
+    // Destroy existing chart if any
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
 
     this.initializeCharts();
   }

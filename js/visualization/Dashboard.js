@@ -149,6 +149,10 @@ export class Dashboard {
       people.push(new Person(i, "B"));
     }
 
+    // Reset turn counter
+    this.currentTurn = 0;
+    document.getElementById("turnCounter").textContent = this.currentTurn;
+
     // Initialize dashboard with clubs and people
     this.initialize(clubs, people);
   }
