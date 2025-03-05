@@ -44,6 +44,13 @@ export class ChartVisualizer extends Visualizer {
       this.chart = null;
     }
 
+    // Update legend with initial trait counts
+    const traitCounts = {
+      R: this.people.filter(person => person.trait === "R").length,
+      B: this.people.filter(person => person.trait === "B").length
+    };
+    this.updateLegend(traitCounts);
+
     this.initializeCharts();
   }
 
@@ -115,6 +122,13 @@ export class ChartVisualizer extends Visualizer {
       clubData.labels.push(turn);
       clubData.ratios.push(ratio);
     });
+
+    // Update legend with current trait counts
+    const traitCounts = {
+      R: this.people.filter(person => person.trait === "R").length,
+      B: this.people.filter(person => person.trait === "B").length
+    };
+    this.updateLegend(traitCounts);
 
     this.draw();
   }

@@ -155,6 +155,15 @@ export class Dashboard {
 
     // Initialize dashboard with clubs and people
     this.initialize(clubs, people);
+
+    // Update legend with initial trait counts
+    if (this.visualizer) {
+      const traitCounts = {
+        R: rCount,
+        B: bCount
+      };
+      this.visualizer.updateLegend(traitCounts);
+    }
   }
 
   runTurns(count) {
