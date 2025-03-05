@@ -25,14 +25,9 @@ export class Person {
       this.clubs.add(club);
       this.justJoined.add(club.id);
       
+      // Only store the angle - radius will be managed by the visualizer
       const angle = Math.random() * Math.PI * 2;
-      const minDimension = Math.min(window.innerWidth, window.innerHeight);
-      const clubRadius = minDimension * 0.08; // Match the radius used in CanvasVisualizer
-      const minRadius = clubRadius * 0.2; // 20% of club radius
-      const maxRadius = clubRadius * 0.6; // 60% of club radius for better padding
-      const radius = minRadius + Math.random() * (maxRadius - minRadius);
-      
-      this.positions.set(club.id, { angle, radius });
+      this.positions.set(club.id, { angle });
       return true;
     }
     return false;

@@ -35,8 +35,12 @@ export class CanvasVisualizer extends Visualizer {
     const maxClubWidth = (this.width - minPadding * 2) / numColumns;
     const maxClubHeight = (this.height - minPadding * 2) / numRows;
     
-    // Set club radius based on available space
-    this.clubRadius = Math.min(maxClubWidth, maxClubHeight) * 0.35;
+    // Set club radius based on available space, ensuring it's not too large
+    this.clubRadius = Math.min(
+      maxClubWidth * 0.35,
+      maxClubHeight * 0.35,
+      this.minDimension * 0.15
+    );
     
     // Calculate actual padding to center the grid
     const horizontalPadding = (this.width - (maxClubWidth * numColumns)) / 2;
@@ -63,8 +67,8 @@ export class CanvasVisualizer extends Visualizer {
       clubs.forEach((club) => {
         if (!personClubPositions.has(club.id)) {
           const angle = Math.random() * Math.PI * 2;
-          const minRadius = this.clubRadius * 0.2;
-          const maxRadius = this.clubRadius * 0.9;
+          const minRadius = this.clubRadius * 0.1; // Reduced from 0.2 to allow more space
+          const maxRadius = this.clubRadius * 0.85; // Increased from 0.9 for safety margin
           const radius = minRadius + Math.random() * (maxRadius - minRadius);
           personClubPositions.set(club.id, { angle, radius });
         }
@@ -100,7 +104,6 @@ export class CanvasVisualizer extends Visualizer {
     this.width = displayWidth;
     this.height = displayHeight;
     this.minDimension = Math.min(this.width, this.height);
-    this.clubRadius = this.minDimension * 0.1;
   }
 
   draw() {
@@ -131,10 +134,11 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.fill();
     this.ctx.stroke();
 
-    // Draw stats bar and labels
+    // Draw stats bar and labels - position everything above the circle with proper spacing
     const barWidth = this.clubRadius * 0.75;
-    const barHeight = this.clubRadius * 0.25;
-    const barY = -this.clubRadius * 1.45;
+    const barHeight = this.clubRadius * 0.2; // Reduced height
+    const statsSpacing = this.clubRadius * 0.3; // Space between elements
+    const barY = -this.clubRadius - statsSpacing; // Position bar above circle with spacing
 
     const rCount = club.getTraitCount("R");
     const bCount = club.getTraitCount("B");
@@ -148,10 +152,10 @@ export class CanvasVisualizer extends Visualizer {
       rCount,
       bCount,
       total,
-      this.clubRadius
+      statsSpacing
     );
 
-    // Draw club label
+    // Draw club label below the circle
     const fontSize = Math.max(12, Math.floor(this.minDimension * 0.012));
     this.ctx.font = `${fontSize}px Arial`;
     this.ctx.fillStyle = "black";
@@ -186,8 +190,13 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.stroke();
   }
 
-  drawClubStats(x, y, barWidth, barHeight, rCount, bCount, total, radius) {
+  drawClubStats(x, y, barWidth, barHeight, rCount, bCount, total, spacing) {
     const barX = x - barWidth / 2;
+
+    // Draw ratio and member count above the bar with proper spacing
+    const ratio = total > 0 ? (rCount / bCount).toFixed(2) : "N/A";
+    this.drawInfoLabel(`R/B: ${ratio}`, x, y - spacing * 1.2, barHeight);
+    this.drawInfoLabel(`Members: ${total}`, x, y - spacing * 0.6, barHeight);
 
     // Background bar
     this.ctx.fillStyle = "#f0f0f0";
@@ -224,10 +233,6 @@ export class CanvasVisualizer extends Visualizer {
       "#2196f3",
       "left"
     );
-
-    const ratio = total > 0 ? (rCount / bCount).toFixed(2) : "N/A";
-    this.drawInfoLabel(`R/B: ${ratio}`, x, y - radius * 0.45, countHeight);
-    this.drawInfoLabel(`Members: ${total}`, x, y - radius * 0.2, countHeight);
   }
 
   drawPerson(person) {
