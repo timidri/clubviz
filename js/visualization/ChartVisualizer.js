@@ -23,7 +23,8 @@ export class ChartVisualizer extends Visualizer {
     this.clubs = clubs;
     this.people = people;
 
-    // Show chart container
+    // Hide main canvas and show chart container
+    this.canvas.style.display = "none";
     this.chartContainer.style.display = "block";
 
     // Initialize data structure for each club
@@ -48,6 +49,10 @@ export class ChartVisualizer extends Visualizer {
       pointRadius: 2,
       fill: false,
     }));
+
+    if (this.chart) {
+      this.chart.destroy();
+    }
 
     this.chart = new Chart(this.chartCanvas.getContext("2d"), {
       type: "line",
@@ -86,6 +91,8 @@ export class ChartVisualizer extends Visualizer {
   }
 
   updateData(turn) {
+    if (!this.chart || !this.clubs) return;
+
     this.clubs.forEach((club) => {
       const rCount = club.getTraitCount("R");
       const bCount = club.getTraitCount("B");
@@ -108,26 +115,32 @@ export class ChartVisualizer extends Visualizer {
   draw() {
     if (!this.chart) return;
 
-    // Update chart data
-    this.chart.data.labels = this.clubData.get(this.clubs[0].id).labels;
-    this.chart.data.datasets = this.clubs.map((club) => ({
-      label: `Club ${club.id}`,
-      data: this.clubData.get(club.id).ratios,
-      borderColor: `hsl(${(club.id * 137.5) % 360}, 70%, 50%)`,
-      borderWidth: 1,
-      pointRadius: 1,
-      fill: false,
-    }));
+    try {
+      // Update chart data
+      this.chart.data.labels = this.clubData.get(this.clubs[0].id).labels;
+      this.chart.data.datasets = this.clubs.map((club) => ({
+        label: `Club ${club.id}`,
+        data: this.clubData.get(club.id).ratios,
+        borderColor: `hsl(${(club.id * 137.5) % 360}, 70%, 50%)`,
+        borderWidth: 1,
+        pointRadius: 1,
+        fill: false,
+      }));
 
-    this.chart.update();
+      this.chart.update();
+    } catch (error) {
+      console.error("Error updating chart:", error);
+    }
   }
 
   updateDimensions(width, height) {
     super.updateDimensions(width, height);
-    this.chartContainer.style.width = `${width}px`;
-    this.chartContainer.style.height = `${height}px`;
-    if (this.chart) {
-      this.chart.resize();
+    if (this.chartContainer) {
+      this.chartContainer.style.width = `${width}px`;
+      this.chartContainer.style.height = `${height}px`;
+      if (this.chart) {
+        this.chart.resize();
+      }
     }
   }
 
@@ -136,6 +149,10 @@ export class ChartVisualizer extends Visualizer {
       this.chart.destroy();
       this.chart = null;
     }
-    this.chartContainer.style.display = "none";
+    if (this.chartContainer) {
+      this.chartContainer.style.display = "none";
+    }
+    this.canvas.style.display = "block";
+    this.clubData.clear();
   }
 }

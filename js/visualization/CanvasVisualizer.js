@@ -12,6 +12,8 @@ export class CanvasVisualizer extends Visualizer {
   initialize(clubs, people) {
     this.clubs = clubs;
     this.people = people;
+    this.clubPositions = new Map();
+    this.personPositions = new Map();
 
     // Update canvas size first
     this.updateCanvasSize();
@@ -34,21 +36,10 @@ export class CanvasVisualizer extends Visualizer {
     const minPadding = Math.min(this.width, this.height) * 0.05;
     const maxClubWidth = (this.width - minPadding * 2) / numColumns;
     const maxClubHeight = (this.height - minPadding * 2) / numRows;
-<<<<<<< HEAD
-    
-    // Set club radius based on available space, ensuring it's not too large
-    this.clubRadius = Math.min(
-      maxClubWidth * 0.35,
-      maxClubHeight * 0.35,
-      this.minDimension * 0.15
-    );
-    
-=======
 
     // Set club radius based on available space
     this.clubRadius = Math.min(maxClubWidth, maxClubHeight) * 0.3;
 
->>>>>>> graph
     // Calculate actual padding to center the grid
     const horizontalPadding = (this.width - maxClubWidth * numColumns) / 2;
     const verticalPadding = (this.height - maxClubHeight * numRows) / 2;
@@ -74,14 +65,18 @@ export class CanvasVisualizer extends Visualizer {
       clubs.forEach((club) => {
         if (!personClubPositions.has(club.id)) {
           const angle = Math.random() * Math.PI * 2;
-          const minRadius = this.clubRadius * 0.1; // Reduced from 0.2 to allow more space
-          const maxRadius = this.clubRadius * 0.85; // Increased from 0.9 for safety margin
+          const minRadius = this.clubRadius * 0.1;
+          const maxRadius = this.clubRadius * 0.85;
           const radius = minRadius + Math.random() * (maxRadius - minRadius);
           personClubPositions.set(club.id, { angle, radius });
         }
       });
     });
 
+    // Ensure canvas is visible
+    this.canvas.style.display = "block";
+    
+    // Draw initial state
     this.draw();
   }
 
@@ -114,9 +109,24 @@ export class CanvasVisualizer extends Visualizer {
   }
 
   draw() {
-    this.ctx.clearRect(0, 0, this.width, this.height);
-    this.clubs.forEach((club) => this.drawClub(club));
+    if (!this.ctx || !this.clubs || !this.people) {
+      console.error("Cannot draw: missing context or data");
+      return;
+    }
 
+    // Clear the canvas
+    this.ctx.clearRect(0, 0, this.width, this.height);
+
+    // Draw each club
+    this.clubs.forEach((club) => {
+      try {
+        this.drawClub(club);
+      } catch (error) {
+        console.error("Error drawing club:", club.id, error);
+      }
+    });
+
+    // Update trait counts for legend
     const traitCounts = {
       R: this.people.filter((person) => person.trait === "R").length,
       B: this.people.filter((person) => person.trait === "B").length,
@@ -240,19 +250,6 @@ export class CanvasVisualizer extends Visualizer {
       "#2196f3",
       "left"
     );
-<<<<<<< HEAD
-=======
-
-    const ratio = rCount > bCount ? bCount / rCount : rCount / bCount;
-    const displayRatio = total > 0 ? ratio.toFixed(2) : "N/A";
-    this.drawInfoLabel(
-      `TR: ${displayRatio}`,
-      x,
-      y - radius * 0.45,
-      countHeight
-    );
-    this.drawInfoLabel(`Members: ${total}`, x, y - radius * 0.2, countHeight);
->>>>>>> graph
   }
 
   drawPerson(person) {

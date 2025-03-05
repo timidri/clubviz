@@ -33,12 +33,26 @@ export class Dashboard {
       this.width,
       this.height
     );
-<<<<<<< HEAD
     
-=======
-
->>>>>>> graph
     this.bindControls();
+    
+    // Apply initial parameters
+    this.applyParameters();
+  }
+
+  updateCanvasSize() {
+    const wrapper = this.canvas.parentElement;
+    const rect = wrapper.getBoundingClientRect();
+    this.width = rect.width;
+    this.height = rect.height;
+
+    if (this.visualizer) {
+      this.visualizer.updateDimensions(this.width, this.height);
+      // Reinitialize if we have data
+      if (this.clubs.length > 0 && this.people.length > 0) {
+        this.visualizer.initialize(this.clubs, this.people);
+      }
+    }
   }
 
   toggleTesting() {
@@ -110,7 +124,7 @@ export class Dashboard {
 
     // Get trait ratio from the slider
     const traitRatioSlider = document.getElementById("traitRatio");
-    const traitRatio = parseFloat(traitRatioSlider.value);
+    const traitRatio = parseFloat(traitRatioSlider.value) || 0.5; // Default to 0.5 if invalid
 
     // Create clubs
     const clubs = Array(config.totalClubs)
@@ -149,6 +163,8 @@ export class Dashboard {
       this.simulator.takeTurn();
       this.currentTurn++;
       document.getElementById("turnCounter").textContent = this.currentTurn;
+      
+      // Update chart data if using ChartVisualizer
       if (this.visualizer instanceof ChartVisualizer) {
         this.visualizer.updateData(this.currentTurn);
       }
@@ -180,23 +196,29 @@ export class Dashboard {
     this.people = people;
     const config = getCurrentConfig();
 
-    // Debug logging to verify config values before creating simulator
-    console.log("Initializing simulator with config:", {
-      leaveHighProb: config.leaveHighProb,
-      leaveLowProb: config.leaveLowProb,
-      threshold: config.leaveProbabilityThreshold,
-    });
-
+    // Create simulator with current configuration
     this.simulator = new Simulator(people, clubs, config);
     if (this.testingEnabled && this.tester) {
       this.simulator.setTester(this.tester);
     }
     this.currentTurn = 0;
     document.getElementById("turnCounter").textContent = this.currentTurn;
-    this.updateStats(); // This will update the turn counter in stats panel
 
     // Initialize visualizer with data
-    this.visualizer.initialize(clubs, people);
+    if (this.visualizer) {
+      try {
+        this.visualizer.initialize(this.clubs, this.people);
+        this.visualizer.draw(); // Ensure immediate draw after initialization
+        console.log("Initialized visualizer with:", {
+          clubs: this.clubs.length,
+          people: this.people.length
+        });
+      } catch (error) {
+        console.error("Error initializing visualizer:", error);
+      }
+    }
+
+    this.updateStats();
   }
 
   switchVisualizer(type) {
@@ -207,44 +229,54 @@ export class Dashboard {
     this.width = rect.width;
     this.height = rect.height;
 
-    if (type === "canvas") {
-      newVisualizer = new CanvasVisualizer(
-        this.canvas,
-        this.ctx,
-        this.width,
-        this.height
-      );
-    } else if (type === "graph") {
-      newVisualizer = new GraphVisualizer(
-        this.canvas,
-        this.ctx,
-        this.width,
-        this.height
-      );
-    } else if (type === "chart") {
-      newVisualizer = new ChartVisualizer(
-        this.canvas,
-        this.ctx,
-        this.width,
-        this.height
-      );
-    }
+    try {
+      if (type === "canvas") {
+        newVisualizer = new CanvasVisualizer(
+          this.canvas,
+          this.ctx,
+          this.width,
+          this.height
+        );
+      } else if (type === "graph") {
+        newVisualizer = new GraphVisualizer(
+          this.canvas,
+          this.ctx,
+          this.width,
+          this.height
+        );
+      } else if (type === "chart") {
+        newVisualizer = new ChartVisualizer(
+          this.canvas,
+          this.ctx,
+          this.width,
+          this.height
+        );
+      }
 
-    if (newVisualizer) {
-      if (this.visualizer) {
-        this.visualizer.cleanup();
+      if (newVisualizer) {
+        if (this.visualizer) {
+          this.visualizer.cleanup();
+        }
+        this.visualizer = newVisualizer;
+        
+        // Initialize with current data if available
+        if (this.clubs.length > 0 && this.people.length > 0) {
+          this.visualizer.initialize(this.clubs, this.people);
+          this.visualizer.draw(); // Ensure immediate draw after initialization
+        }
       }
-      this.visualizer = newVisualizer;
-      this.visualizer.updateDimensions(this.width, this.height);
-      if (this.clubs.length > 0 && this.people.length > 0) {
-        this.visualizer.initialize(this.clubs, this.people);
-      }
+    } catch (error) {
+      console.error("Error switching visualizer:", error);
     }
   }
 
   draw() {
     if (this.visualizer) {
-      this.visualizer.draw();
+      try {
+        this.visualizer.draw();
+      } catch (error) {
+        console.error("Error in draw:", error);
+      }
     }
   }
 

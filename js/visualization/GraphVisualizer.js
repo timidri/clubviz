@@ -6,26 +6,23 @@ export class GraphVisualizer extends Visualizer {
     this.cy = null;
     this.container = canvas.parentElement;
     this.graphContainer = document.createElement("div");
+    this.graphContainer.id = "cy";
     this.graphContainer.style.width = `${width}px`;
     this.graphContainer.style.height = `${height}px`;
-    this.graphContainer.style.display = "none";
     this.container.appendChild(this.graphContainer);
 
     this.layoutConfig = {
       name: "cose",
       animate: false,
-      randomize: false,
+      randomize: true,
       componentSpacing: 40,
-      nodeRepulsion: function (node) {
+      nodeRepulsion: function() {
         return 20000;
       },
       edgeElasticity: 800,
       gravity: 200,
       nodeOverlap: 4,
       idealEdgeLength: 30,
-      edgeElasticity: function (edge) {
-        return 128;
-      },
       refresh: 20,
       fit: true,
       padding: 30,
@@ -40,52 +37,75 @@ export class GraphVisualizer extends Visualizer {
     this.canvas.style.display = "none";
     this.graphContainer.style.display = "block";
 
-    // Initialize Cytoscape instance
-    this.cy = cytoscape({
-      container: this.graphContainer,
-      elements: this.createElements(clubs, people),
-      style: [
-        {
-          selector: "node",
-          style: {
-            "background-color": "data(color)",
-            label: "data(id)",
-            width: 18,
-            height: 18,
-            "text-valign": "center",
-            "text-halign": "center",
-            "font-size": "8px",
-            "text-outline-width": 0,
+    try {
+      // Initialize Cytoscape instance
+      if (this.cy) {
+        this.cy.destroy();
+      }
+
+      // Create elements for Cytoscape
+      const elements = this.createElements(clubs, people);
+      console.log("Cytoscape elements:", elements);
+      
+      this.cy = cytoscape({
+        container: this.graphContainer,
+        elements: elements,
+        style: [
+          {
+            selector: "node",
+            style: {
+              "background-color": "data(color)",
+              label: "data(label)",
+              width: 20,
+              height: 20,
+              "text-valign": "center",
+              "text-halign": "center",
+              "font-size": "10px",
+              "text-outline-width": 2,
+              "text-outline-color": "#fff",
+              "color": "#000",
+            },
           },
-        },
-        {
-          selector: "edge",
-          style: {
-            width: 1,
-            "line-color": "#333",
-            "line-opacity": 0.3,
-            "curve-style": "bezier",
-            opacity: 1,
-            "target-arrow-shape": "none",
-            "line-style": "solid",
+          {
+            selector: "edge",
+            style: {
+              width: 1,
+              "line-color": "#333",
+              "line-opacity": 0.3,
+              "curve-style": "bezier",
+            },
           },
-        },
-      ],
-      layout: this.layoutConfig,
-    });
+        ],
+        layout: this.layoutConfig,
+      });
+
+      // Run layout
+      const layout = this.cy.layout(this.layoutConfig);
+      layout.run();
+
+      console.log("Cytoscape initialized with:", {
+        clubs: clubs.length,
+        people: people.length,
+        nodes: this.cy.nodes().length,
+        edges: this.cy.edges().length
+      });
+    } catch (error) {
+      console.error("Error initializing cytoscape:", error);
+    }
   }
 
   createElements(clubs, people) {
-    // console.log(clubs);
-    // console.log(people);
     const elements = [];
 
     // Add nodes for each person
     people.forEach((person) => {
       elements.push({
+        group: "nodes",
         data: {
-          id: `${person.id}`,
+          id: `p${person.id}`,
+          label: `P${person.id}`,
           color: person.trait === "R" ? "#e91e63" : "#2196f3",
+          type: "person",
         },
       });
     });
@@ -96,45 +116,62 @@ export class GraphVisualizer extends Visualizer {
       for (let i = 0; i < members.length; i++) {
         for (let j = i + 1; j < members.length; j++) {
           elements.push({
+            group: "edges",
             data: {
               id: `c${club.id}:${members[i].id}-${members[j].id}`,
-              source: `${members[i].id}`,
-              target: `${members[j].id}`,
+              source: `p${members[i].id}`,
+              target: `p${members[j].id}`,
+              clubId: club.id,
             },
           });
         }
       }
     });
-    // console.log(elements);
+
     return elements;
   }
 
   draw() {
     if (this.cy) {
-      // Update elements with current state
-      this.cy.elements().remove();
-      this.cy.add(this.createElements(this.clubs, this.people));
-
-      // Refresh layout
-      this.cy.layout(this.layoutConfig).run();
+      try {
+        // Update elements with current state
+        const elements = this.createElements(this.clubs, this.people);
+        this.cy.elements().remove();
+        this.cy.add(elements);
+        
+        // Refresh layout
+        const layout = this.cy.layout(this.layoutConfig);
+        layout.run();
+      } catch (error) {
+        console.error("Error updating cytoscape graph:", error);
+      }
     }
   }
 
   updateDimensions(width, height) {
     super.updateDimensions(width, height);
-    this.graphContainer.style.width = `${width}px`;
-    this.graphContainer.style.height = `${height}px`;
-    if (this.cy) {
-      this.cy.resize();
+    if (this.graphContainer) {
+      this.graphContainer.style.width = `${width}px`;
+      this.graphContainer.style.height = `${height}px`;
+      if (this.cy) {
+        this.cy.resize();
+        this.cy.fit();
+      }
     }
   }
 
   cleanup() {
-    if (this.cy) {
-      this.cy.destroy();
-      this.cy = null;
+    try {
+      if (this.cy) {
+        this.cy.destroy();
+        this.cy = null;
+      }
+      if (this.graphContainer && this.graphContainer.parentNode) {
+        this.graphContainer.parentNode.removeChild(this.graphContainer);
+      }
+      this.canvas.style.display = "block";
+    } catch (error) {
+      console.error("Error cleaning up GraphVisualizer:", error);
     }
-    this.graphContainer.style.display = "none";
-    this.canvas.style.display = "block";
   }
 }
