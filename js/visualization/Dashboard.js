@@ -14,6 +14,12 @@ export class Dashboard {
     this.statsPanel = document.getElementById("stats");
     this.currentTurn = 0;
 
+    // Get initial dimensions from the canvas wrapper
+    const wrapper = this.canvas.parentElement;
+    const rect = wrapper.getBoundingClientRect();
+    this.width = rect.width;
+    this.height = rect.height;
+
     this.clubs = [];
     this.people = [];
     this.simulator = null;
@@ -28,7 +34,6 @@ export class Dashboard {
       this.height
     );
     
-   
     this.bindControls();
   }
 
@@ -189,6 +194,12 @@ export class Dashboard {
 
   switchVisualizer(type) {
     let newVisualizer;
+    // Update dimensions before creating new visualizer
+    const wrapper = this.canvas.parentElement;
+    const rect = wrapper.getBoundingClientRect();
+    this.width = rect.width;
+    this.height = rect.height;
+
     if (type === "canvas") {
       newVisualizer = new CanvasVisualizer(
         this.canvas,
