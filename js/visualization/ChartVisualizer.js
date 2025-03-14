@@ -117,6 +117,13 @@ export class ChartVisualizer extends Visualizer {
         ratio = bCount / total;
       }
 
+      // Debug log to verify ratio calculation
+      console.log(`Club ${club.id} ratio:`, {
+        bCount,
+        total,
+        ratio
+      });
+
       const clubData = this.clubData.get(club.id);
       clubData.labels.push(turn);
       clubData.ratios.push(ratio);
@@ -129,6 +136,7 @@ export class ChartVisualizer extends Visualizer {
     };
     this.updateLegend(traitCounts);
 
+    // Call draw to update the chart
     this.draw();
   }
 
@@ -138,15 +146,21 @@ export class ChartVisualizer extends Visualizer {
     try {
       // Update chart data
       this.chart.data.labels = this.clubData.get(this.clubs[0].id).labels;
-      this.chart.data.datasets = this.clubs.map((club) => ({
-        label: `Club ${club.id}`,
-        data: this.clubData.get(club.id).ratios,
-        borderColor: `hsl(${(club.id * 137.5) % 360}, 70%, 50%)`,
-        borderWidth: 1,
-        pointRadius: 1,
-        fill: false,
-      }));
-
+      
+      // Only update the club datasets, not the equilibrium lines
+      // Find the club datasets by checking if they don't have 'Equilibrium' in the label
+      const clubDatasets = this.chart.data.datasets.filter(
+        dataset => !dataset.label.includes('Equilibrium')
+      );
+      
+      // Update club datasets with new data
+      this.clubs.forEach((club, index) => {
+        if (index < clubDatasets.length) {
+          clubDatasets[index].data = this.clubData.get(club.id).ratios;
+        }
+      });
+      
+      // Update the chart
       this.chart.update();
     } catch (error) {
       console.error("Error updating chart:", error);
