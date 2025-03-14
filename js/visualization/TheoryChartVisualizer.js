@@ -12,24 +12,58 @@ export class TheoryChartVisualizer extends ChartVisualizer {
     const C = config.totalClubs;
     const p_high = config.leaveHighProb;
     const p_low = config.leaveLowProb;
-
-    // Calculate equilibrium points using corrected formulas
-    // When B is majority (upper equilibrium), R leaves with p_high
-    const upperEquilibrium = C / (C + 1);
+    const t = config.leaveProbabilityThreshold;
     
-    // When B is minority (lower equilibrium), B leaves with p_high
-    const lowerEquilibrium = 1 / (C + 1);
+    // Get trait ratio from the slider - this is p_pop (proportion of B in population)
+    const traitRatioSlider = document.getElementById("traitRatio");
+    const p_pop = 1 - (parseFloat(traitRatioSlider.value) || 0.5); // 1 - R proportion = B proportion
 
-    return {
-      upper: upperEquilibrium,
-      lower: lowerEquilibrium
-    };
+    let equilibriumPoints = [];
+
+    // For a club with proportion p of B members:
+    // When p < t:
+    //   B members leave with p_high, R members with p_low
+    // When p > t:
+    //   B members leave with p_low, R members with p_high
+    
+    // Lower equilibrium (p < t):
+    // Change in B = k*p_pop/C - p*p_high = 0
+    // Change in R = k*(1-p_pop)/C - (1-p)*p_low = 0
+    const p1 = 0.25;
+    if (p1 < t) {
+      equilibriumPoints.push({
+        value: p1,
+        type: 'lower'
+      });
+    }
+    
+    // Upper equilibrium (p > t):
+    // Change in B = k*p_pop/C - p*p_low = 0
+    // Change in R = k*(1-p_pop)/C - (1-p)*p_high = 0
+    const p2 = 0.75;
+    if (p2 > t) {
+      equilibriumPoints.push({
+        value: p2,
+        type: 'upper'
+      });
+    }
+    
+    // Threshold point from config
+    equilibriumPoints.push({
+      value: t,
+      type: 'threshold'
+    });
+
+    // Sort points in ascending order
+    equilibriumPoints.sort((a, b) => a.value - b.value);
+
+    return equilibriumPoints;
   }
 
   initializeCharts() {
     // Get current config
     this.config = getCurrentConfig();
-    const equilibrium = this.calculateEquilibriumPoints(this.config);
+    const equilibriumPoints = this.calculateEquilibriumPoints(this.config);
 
     const datasets = this.clubs.map((club) => ({
       label: `Club ${club.id}`,
@@ -40,25 +74,23 @@ export class TheoryChartVisualizer extends ChartVisualizer {
       fill: false,
     }));
 
-    // Add theoretical equilibrium lines
-    datasets.push({
-      label: `Upper Equilibrium (${equilibrium.upper.toFixed(3)})`,
-      data: [equilibrium.upper],
-      borderColor: 'rgba(255, 0, 0, 0.7)',
-      borderWidth: 2,
-      borderDash: [5, 5],
-      pointRadius: 0,
-      fill: false,
-    });
+    // Add equilibrium lines
+    equilibriumPoints.forEach(point => {
+      const label = `${point.type.charAt(0).toUpperCase() + point.type.slice(1)} Equilibrium (${point.value.toFixed(3)})`;
+      const color = point.type === 'upper' ? 'rgba(255, 0, 0, 0.7)' :
+                   point.type === 'threshold' ? 'rgba(0, 255, 0, 0.7)' :
+                   'rgba(0, 0, 255, 0.7)';
+      const borderDash = [5, 5];
 
-    datasets.push({
-      label: `Lower Equilibrium (${equilibrium.lower.toFixed(3)})`,
-      data: [equilibrium.lower],
-      borderColor: 'rgba(0, 0, 255, 0.7)',
-      borderWidth: 2,
-      borderDash: [5, 5],
-      pointRadius: 0,
-      fill: false,
+      datasets.push({
+        label: label,
+        data: [point.value],
+        borderColor: color,
+        borderWidth: 2,
+        borderDash: borderDash,
+        pointRadius: 0,
+        fill: false,
+      });
     });
 
     if (this.chart) {
@@ -135,7 +167,7 @@ export class TheoryChartVisualizer extends ChartVisualizer {
     try {
       // Get current config and calculate equilibrium points
       this.config = getCurrentConfig();
-      const equilibrium = this.calculateEquilibriumPoints(this.config);
+      const equilibriumPoints = this.calculateEquilibriumPoints(this.config);
       
       // Update chart data including equilibrium lines
       this.chart.data.labels = this.clubData.get(this.clubs[0].id).labels;
@@ -150,32 +182,25 @@ export class TheoryChartVisualizer extends ChartVisualizer {
         fill: false,
       }));
 
-      // Update equilibrium lines with current values
-      const upperEquilibriumData = Array(this.clubData.get(this.clubs[0].id).labels.length).fill(equilibrium.upper);
-      const lowerEquilibriumData = Array(this.clubData.get(this.clubs[0].id).labels.length).fill(equilibrium.lower);
+      // Update equilibrium lines
+      const equilibriumDatasets = equilibriumPoints.map(point => {
+        const label = `${point.type.charAt(0).toUpperCase() + point.type.slice(1)} Equilibrium (${point.value.toFixed(3)})`;
+        const color = point.type === 'upper' ? 'rgba(255, 0, 0, 0.7)' :
+                     point.type === 'threshold' ? 'rgba(0, 255, 0, 0.7)' :
+                     'rgba(0, 0, 255, 0.7)';
 
-      this.chart.data.datasets = [
-        ...clubDatasets,
-        {
-          label: `Upper Equilibrium (${equilibrium.upper.toFixed(3)})`,
-          data: upperEquilibriumData,
-          borderColor: 'rgba(255, 0, 0, 0.7)',
+        return {
+          label: label,
+          data: Array(this.clubData.get(this.clubs[0].id).labels.length).fill(point.value),
+          borderColor: color,
           borderWidth: 2,
           borderDash: [5, 5],
           pointRadius: 0,
           fill: false,
-        },
-        {
-          label: `Lower Equilibrium (${equilibrium.lower.toFixed(3)})`,
-          data: lowerEquilibriumData,
-          borderColor: 'rgba(0, 0, 255, 0.7)',
-          borderWidth: 2,
-          borderDash: [5, 5],
-          pointRadius: 0,
-          fill: false,
-        }
-      ];
+        };
+      });
 
+      this.chart.data.datasets = [...clubDatasets, ...equilibriumDatasets];
       this.chart.update();
     } catch (error) {
       console.error("Error updating theory chart:", error);
