@@ -6,6 +6,7 @@ import { Person } from "../models/Person.js";
 import { CanvasVisualizer } from "./CanvasVisualizer.js";
 import { GraphVisualizer } from "./GraphVisualizer.js";
 import { ChartVisualizer } from "./ChartVisualizer.js";
+import { TheoryChartVisualizer } from "./TheoryChartVisualizer.js";
 
 export class Dashboard {
   constructor() {
@@ -235,52 +236,52 @@ export class Dashboard {
   }
 
   switchVisualizer(type) {
-    let newVisualizer;
-    // Update dimensions before creating new visualizer
-    const wrapper = this.canvas.parentElement;
-    const rect = wrapper.getBoundingClientRect();
-    this.width = rect.width;
-    this.height = rect.height;
-
-    try {
-      if (type === "canvas") {
-        newVisualizer = new CanvasVisualizer(
-          this.canvas,
-          this.ctx,
-          this.width,
-          this.height
-        );
-      } else if (type === "graph") {
-        newVisualizer = new GraphVisualizer(
-          this.canvas,
-          this.ctx,
-          this.width,
-          this.height
-        );
-      } else if (type === "chart") {
-        newVisualizer = new ChartVisualizer(
-          this.canvas,
-          this.ctx,
-          this.width,
-          this.height
-        );
-      }
-
-      if (newVisualizer) {
-        if (this.visualizer) {
-          this.visualizer.cleanup();
-        }
-        this.visualizer = newVisualizer;
-        
-        // Initialize with current data if available
-        if (this.clubs.length > 0 && this.people.length > 0) {
-          this.visualizer.initialize(this.clubs, this.people);
-          this.visualizer.draw(); // Ensure immediate draw after initialization
-        }
-      }
-    } catch (error) {
-      console.error("Error switching visualizer:", error);
+    // Cleanup existing visualizer
+    if (this.visualizer) {
+      this.visualizer.cleanup();
     }
+
+    // Create new visualizer
+    switch (type) {
+      case "canvas":
+        this.visualizer = new CanvasVisualizer(
+          this.canvas,
+          this.ctx,
+          this.width,
+          this.height
+        );
+        break;
+      case "graph":
+        this.visualizer = new GraphVisualizer(
+          this.canvas,
+          this.ctx,
+          this.width,
+          this.height
+        );
+        break;
+      case "chart":
+        this.visualizer = new ChartVisualizer(
+          this.canvas,
+          this.ctx,
+          this.width,
+          this.height
+        );
+        break;
+      case "theory":
+        this.visualizer = new TheoryChartVisualizer(
+          this.canvas,
+          this.ctx,
+          this.width,
+          this.height
+        );
+        break;
+      default:
+        console.error("Unknown visualizer type:", type);
+        return;
+    }
+
+    // Initialize new visualizer with current state
+    this.visualizer.initialize(this.clubs, this.people);
   }
 
   draw() {

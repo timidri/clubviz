@@ -8,8 +8,8 @@ export const defaultConfig = {
   },
   joinProbability: 1,
   leaveProbabilityThreshold: 0.5,
-  leaveHighProb: 1.0,
-  leaveLowProb: 0.0,
+  leaveHighProb: 0.9,
+  leaveLowProb: 0.1,
   simulationSpeed: 500,
 };
 
