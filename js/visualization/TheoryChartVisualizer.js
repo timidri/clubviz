@@ -35,65 +35,60 @@ export class TheoryChartVisualizer extends ChartVisualizer {
 
     let equilibriumPoints = [];
 
-    // Calculate the equilibrium points based on the theoretical model
-    // The correct formulas based on the simulation logic in Simulator.js:
-    // For p < t (B is underrepresented):
-    //   - B members leave with p_high probability
-    //   - R members leave with p_low probability
-    // For p > t (B is well-represented):
-    //   - B members leave with p_low probability
-    //   - R members leave with p_high probability
+    // MARKOV CHAIN MODEL: Each club is an independent Markov chain
+    // A person's membership in one club doesn't affect their behavior in other clubs
     
-    // Lower equilibrium (when p < t):
-    // At equilibrium: join_rate_B = leave_rate_B and join_rate_R = leave_rate_R
-    // join_rate_B = (k/C) * b_pop
-    // leave_rate_B = p * p_high
-    // join_rate_R = (k/C) * r_pop
-    // leave_rate_R = (1-p) * p_low
-    // Solving for p: p = (k/C) * b_pop / p_high
-    const join_rate_B = (k/C) * b_pop;
-    const join_rate_R = (k/C) * r_pop;
+    // For each club, we need to model:
+    // 1. The flow of B-trait people in and out
+    // 2. The flow of R-trait people in and out
+    // At equilibrium, these flows balance
     
-    // Lower equilibrium calculation
-    // p = join_rate_B / p_high
-    const p_lower = join_rate_B / p_high;
+    // For B-trait people:
+    // - Join rate: (k/C) * b_pop * (1 - membership_rate_B)
+    // - Leave rate: membership_rate_B * leave_prob_B
+    // Where membership_rate_B is the proportion of B-trait people who are members
     
-    // Upper equilibrium calculation
-    // p = 1 - (join_rate_R / p_high)
-    const p_upper = 1 - (join_rate_R / p_high);
+    // For R-trait people:
+    // - Join rate: (k/C) * r_pop * (1 - membership_rate_R)
+    // - Leave rate: membership_rate_R * leave_prob_R
+    // Where membership_rate_R is the proportion of R-trait people who are members
     
-    // Debug log to verify the equilibrium calculations
-    console.log("Equilibrium calculations:", {
+    // At equilibrium, join rate = leave rate for each trait
+    // This gives us:
+    // membership_rate_B = (k/C) / ((k/C) + leave_prob_B)
+    // membership_rate_R = (k/C) / ((k/C) + leave_prob_R)
+    
+    // The proportion of B in the club is:
+    // p = (membership_rate_B * b_pop) / (membership_rate_B * b_pop + membership_rate_R * r_pop)
+    
+    // We have two cases to consider:
+    // 1. p < t: B leaves with p_high, R leaves with p_low
+    // 2. p > t: B leaves with p_low, R leaves with p_high
+    
+    // Case 1: p < t
+    const membership_rate_B_lower = (k/C) / ((k/C) + p_high);
+    const membership_rate_R_lower = (k/C) / ((k/C) + p_low);
+    const p_lower = (membership_rate_B_lower * b_pop) / 
+                   (membership_rate_B_lower * b_pop + membership_rate_R_lower * r_pop);
+    
+    // Case 2: p > t
+    const membership_rate_B_upper = (k/C) / ((k/C) + p_low);
+    const membership_rate_R_upper = (k/C) / ((k/C) + p_high);
+    const p_upper = (membership_rate_B_upper * b_pop) / 
+                   (membership_rate_B_upper * b_pop + membership_rate_R_upper * r_pop);
+    
+    console.log("Markov chain equilibrium calculations:", {
       b_pop,
       r_pop,
       p_high,
       p_low,
       t,
-      join_rate_B,
-      join_rate_R,
+      membership_rate_B_lower,
+      membership_rate_R_lower,
       p_lower,
-      p_upper,
-      p_lower_formula: `(${k}/${C}) * ${b_pop} / ${p_high}`,
-      p_upper_formula: `1 - ((${k}/${C}) * ${r_pop} / ${p_high})`
-    });
-    
-    // Calculate the values step by step for debugging
-    console.log("Step-by-step calculation for lower equilibrium:", {
-      k,
-      C,
-      b_pop,
-      p_high,
-      join_rate_B,
-      result: join_rate_B / p_high
-    });
-    
-    console.log("Step-by-step calculation for upper equilibrium:", {
-      k,
-      C,
-      r_pop,
-      p_high,
-      join_rate_R,
-      result: 1 - (join_rate_R / p_high)
+      membership_rate_B_upper,
+      membership_rate_R_upper,
+      p_upper
     });
     
     // ALWAYS add both equilibrium points regardless of validity or stability
