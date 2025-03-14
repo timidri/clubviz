@@ -88,7 +88,7 @@ export class ChartVisualizer extends Visualizer {
           y: {
             title: {
               display: true,
-              text: "Trait Ratio",
+              text: "Proportion of B",
             },
             min: 0,
             max: 1,
@@ -108,14 +108,13 @@ export class ChartVisualizer extends Visualizer {
     if (!this.chart || !this.clubs) return;
 
     this.clubs.forEach((club) => {
-      const rCount = club.getTraitCount("R");
       const bCount = club.getTraitCount("B");
       const total = club.getMemberCount();
 
       let ratio = 0;
       if (total > 0) {
-        // Calculate ratio (smaller trait count / larger trait count)
-        ratio = rCount > bCount ? bCount / rCount : rCount / bCount;
+        // Calculate proportion of B in the club
+        ratio = bCount / total;
       }
 
       const clubData = this.clubData.get(club.id);

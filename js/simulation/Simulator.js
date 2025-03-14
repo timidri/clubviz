@@ -99,10 +99,9 @@ export class Simulator {
     const lowProb =
       this.config.leaveLowProb !== undefined ? this.config.leaveLowProb : 0.0;
 
-    const prob =
-      traitProportion < this.config.leaveProbabilityThreshold
-        ? highProb
-        : lowProb;
+    // A trait is underrepresented if its proportion is less than the threshold
+    const isUnderrepresented = traitProportion < this.config.leaveProbabilityThreshold;
+    const prob = isUnderrepresented ? highProb : lowProb;
 
     // Debug logging
     // console.log(`Leave probability for ${person.id} in club ${club.id}:`, {
