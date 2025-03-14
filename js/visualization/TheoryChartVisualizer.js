@@ -14,7 +14,7 @@ export class TheoryChartVisualizer extends ChartVisualizer {
     const p_low = config.leaveLowProb;
     const t = config.leaveProbabilityThreshold;
     
-    // Get trait ratio from the slider - this is p_pop (proportion of R in population)
+    // Get trait ratio from the slider - this is r_pop (proportion of R in population)
     const traitRatioSlider = document.getElementById("traitRatio");
     const r_pop = parseFloat(traitRatioSlider.value) || 0.5; // R proportion
     const b_pop = 1 - r_pop; // B proportion
@@ -35,33 +35,32 @@ export class TheoryChartVisualizer extends ChartVisualizer {
 
     let equilibriumPoints = [];
 
-    // Calculate the equilibrium points directly
-    // For 50/50 population, p_high=0.9, p_low=0.1:
-    // Lower equilibrium = 0.1
-    // Upper equilibrium = 0.9
+    // Calculate the equilibrium points based on the theoretical model
+    // The correct formulas based on the simulation logic in Simulator.js:
+    // For p < t (B is underrepresented):
+    //   - B members leave with p_high probability
+    //   - R members leave with p_low probability
+    // For p > t (B is well-represented):
+    //   - B members leave with p_low probability
+    //   - R members leave with p_high probability
     
-    // For general case:
-    // Lower equilibrium = (b_pop * p_low) / (r_pop * p_high + b_pop * p_low)
-    // Upper equilibrium = (b_pop * p_high) / (r_pop * p_low + b_pop * p_high)
+    // Lower equilibrium (when p < t):
+    // At equilibrium: join_rate_B = leave_rate_B and join_rate_R = leave_rate_R
+    // join_rate_B = (k/C) * b_pop
+    // leave_rate_B = p * p_high
+    // join_rate_R = (k/C) * r_pop
+    // leave_rate_R = (1-p) * p_low
+    // Solving for p: p = (k/C) * b_pop / p_high
+    const join_rate_B = (k/C) * b_pop;
+    const join_rate_R = (k/C) * r_pop;
     
-    // Calculate the equilibrium points
-    let p_lower = (b_pop * p_low) / (r_pop * p_high + b_pop * p_low);
-    let p_upper = (b_pop * p_high) / (r_pop * p_low + b_pop * p_high);
+    // Lower equilibrium calculation
+    // p = join_rate_B / p_high
+    const p_lower = join_rate_B / p_high;
     
-    // Adjust for observed behavior - the actual equilibrium points seem to be closer to 0.25 and 0.75
-    // This could be due to various factors in the simulation that aren't captured in the theoretical model
-    // For example, the fact that people can be in multiple clubs, or that the join/leave decisions
-    // are made sequentially rather than simultaneously
-    
-    // Calculate adjustment factors based on the difference between theoretical and observed
-    const theoretical_lower = p_lower;
-    const theoretical_upper = p_upper;
-    const observed_lower = 0.25; // Based on the chart showing clubs around 20-30% B
-    const observed_upper = 0.75; // Based on the chart showing clubs around 70-80% B
-    
-    // Apply adjustments
-    p_lower = observed_lower;
-    p_upper = observed_upper;
+    // Upper equilibrium calculation
+    // p = 1 - (join_rate_R / p_high)
+    const p_upper = 1 - (join_rate_R / p_high);
     
     // Debug log to verify the equilibrium calculations
     console.log("Equilibrium calculations:", {
@@ -70,47 +69,31 @@ export class TheoryChartVisualizer extends ChartVisualizer {
       p_high,
       p_low,
       t,
-      theoretical_lower,
-      theoretical_upper,
-      observed_lower,
-      observed_upper,
+      join_rate_B,
+      join_rate_R,
       p_lower,
-      p_upper
+      p_upper,
+      p_lower_formula: `(${k}/${C}) * ${b_pop} / ${p_high}`,
+      p_upper_formula: `1 - ((${k}/${C}) * ${r_pop} / ${p_high})`
     });
     
     // Calculate the values step by step for debugging
-    const lower_numerator = b_pop * p_low;
-    const lower_denominator = r_pop * p_high + b_pop * p_low;
-    const upper_numerator = b_pop * p_high;
-    const upper_denominator = r_pop * p_low + b_pop * p_high;
-    
     console.log("Step-by-step calculation for lower equilibrium:", {
+      k,
+      C,
       b_pop,
-      p_low,
-      r_pop,
       p_high,
-      lower_numerator,
-      lower_denominator,
-      result: lower_numerator / lower_denominator
+      join_rate_B,
+      result: join_rate_B / p_high
     });
     
     console.log("Step-by-step calculation for upper equilibrium:", {
-      b_pop,
-      p_high,
+      k,
+      C,
       r_pop,
-      p_low,
-      upper_numerator,
-      upper_denominator,
-      result: upper_numerator / upper_denominator
-    });
-    
-    // Double-check with direct calculation
-    const p_lower_direct = (0.5 * 0.1) / (0.5 * 0.9 + 0.5 * 0.1);
-    const p_upper_direct = (0.5 * 0.9) / (0.5 * 0.1 + 0.5 * 0.9);
-    
-    console.log("Direct calculation with hardcoded values:", {
-      p_lower_direct,
-      p_upper_direct
+      p_high,
+      join_rate_R,
+      result: 1 - (join_rate_R / p_high)
     });
     
     // ALWAYS add both equilibrium points regardless of validity or stability
