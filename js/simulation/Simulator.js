@@ -159,11 +159,8 @@ export class Simulator {
     const lowProb = this.config.leaveLowProb !== undefined ? this.config.leaveLowProb : 0.0;
     
     // Determine if the person's trait is underrepresented
-    // For B trait: check if bProportion < threshold
-    // For R trait: check if rProportion < (1 - threshold)
-    const isUnderrepresented = person.trait === "B" 
-      ? bProportion < threshold 
-      : rProportion < (1 - threshold);
+    // For both B and R: check if their proportion < threshold
+    const isUnderrepresented = (person.trait === "B" ? bProportion : rProportion) < threshold;
     
     // Set leave probability based on representation
     const prob = isUnderrepresented ? highProb : lowProb;
@@ -183,8 +180,8 @@ export class Simulator {
         lowProb,
         probability: prob,
         explanation: isUnderrepresented 
-          ? `${person.trait} underrepresented (${person.trait === "B" ? bProportion : rProportion} < ${person.trait === "B" ? threshold : (1-threshold)}), leaves at HIGH prob` 
-          : `${person.trait} well-represented (${person.trait === "B" ? bProportion : rProportion} >= ${person.trait === "B" ? threshold : (1-threshold)}), leaves at LOW prob`
+          ? `${person.trait} underrepresented (${person.trait === "B" ? bProportion : rProportion} < ${threshold}), leaves at HIGH prob` 
+          : `${person.trait} well-represented (${person.trait === "B" ? bProportion : rProportion} >= ${threshold}), leaves at LOW prob`
       });
     }
 

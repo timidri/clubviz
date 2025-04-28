@@ -62,19 +62,20 @@ export class TheoryChartVisualizer extends ChartVisualizer {
     // p = (membership_rate_B * b_pop) / (membership_rate_B * b_pop + membership_rate_R * r_pop)
     
     // We have two cases to consider:
-    // 1. p < t: B leaves with p_high, R leaves with p_low
-    // 2. p > t: B leaves with p_low, R leaves with p_high
+    // 1. p < t: B leaves with p_high, R leaves with p_high
+    // 2. p > t: B leaves with p_low, R leaves with p_low
+    // (Symmetric threshold for both traits)
     
-    // Case 1: p < t (B underrepresented, R well-represented)
+    // Case 1: p < t (both traits use high leave probability if underrepresented)
     const membership_rate_B_lower = (k/C) / ((k/C) + p_high);
-    const membership_rate_R_lower = (k/C) / ((k/C) + p_low);
-    const p_lower = (membership_rate_B_lower * b_pop) / 
+    const membership_rate_R_lower = (k/C) / ((k/C) + p_high);
+    const p_lower = (membership_rate_B_lower * b_pop) /
                    (membership_rate_B_lower * b_pop + membership_rate_R_lower * r_pop);
     
-    // Case 2: p > t (B well-represented, R underrepresented)
+    // Case 2: p > t (both traits use low leave probability if well-represented)
     const membership_rate_B_upper = (k/C) / ((k/C) + p_low);
-    const membership_rate_R_upper = (k/C) / ((k/C) + p_high);
-    const p_upper = (membership_rate_B_upper * b_pop) / 
+    const membership_rate_R_upper = (k/C) / ((k/C) + p_low);
+    const p_upper = (membership_rate_B_upper * b_pop) /
                    (membership_rate_B_upper * b_pop + membership_rate_R_upper * r_pop);
     
     // Verify symmetry: if we swap B and R, we should get complementary values
