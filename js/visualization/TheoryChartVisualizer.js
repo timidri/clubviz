@@ -77,6 +77,10 @@ export class TheoryChartVisualizer extends ChartVisualizer {
     const p_upper = (membership_rate_B_upper * b_pop) / 
                    (membership_rate_B_upper * b_pop + membership_rate_R_upper * r_pop);
     
+    // Verify symmetry: if we swap B and R, we should get complementary values
+    const r_lower = 1 - p_lower;
+    const r_upper = 1 - p_upper;
+    
     console.log("Markov chain equilibrium calculations:", {
       b_pop,
       r_pop,
@@ -86,9 +90,11 @@ export class TheoryChartVisualizer extends ChartVisualizer {
       membership_rate_B_lower,
       membership_rate_R_lower,
       p_lower,
+      r_lower,
       membership_rate_B_upper,
       membership_rate_R_upper,
-      p_upper
+      p_upper,
+      r_upper
     });
     
     // ALWAYS add both equilibrium points regardless of validity or stability
