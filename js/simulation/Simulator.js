@@ -147,47 +147,42 @@ export class Simulator {
     // Avoid division by zero
     if (totalCount === 0) return 0;
     
-    // Calculate the proportion of trait B in the club
+    // Calculate the proportion of each trait in the club
     const bCount = club.getTraitCount("B");
+    const rCount = club.getTraitCount("R");
     const bProportion = bCount / totalCount;
+    const rProportion = rCount / totalCount;
     
     // Get threshold and probabilities
     const threshold = this.config.leaveProbabilityThreshold;
     const highProb = this.config.leaveHighProb !== undefined ? this.config.leaveHighProb : 1.0;
     const lowProb = this.config.leaveLowProb !== undefined ? this.config.leaveLowProb : 0.0;
     
-    // Determine if B is underrepresented
-    const isBUnderrepresented = bProportion < threshold;
+    // Determine if the person's trait is underrepresented
+    const isUnderrepresented = person.trait === "B" 
+      ? bProportion < threshold 
+      : rProportion < (1 - threshold);
     
-    // Set leave probability based on trait and representation
-    let prob;
-    if (person.trait === "B") {
-      // B members leave at high probability when B is underrepresented
-      // B members leave at low probability when B is well-represented
-      prob = isBUnderrepresented ? highProb : lowProb;
-    } else { // person.trait === "R"
-      // R members leave at low probability when B is underrepresented (R is well-represented)
-      // R members leave at high probability when B is well-represented (R is underrepresented)
-      prob = isBUnderrepresented ? lowProb : highProb;
-    }
+    // Set leave probability based on representation
+    const prob = isUnderrepresented ? highProb : lowProb;
 
     // Debug logging - log every 100th calculation to avoid console spam
     if (Math.random() < 0.01) {
       console.log(`Leave probability for ${person.id} (${person.trait}) in club ${club.id}:`, {
         trait: person.trait,
         bCount,
-        rCount: totalCount - bCount,
+        rCount,
         totalCount,
         bProportion,
-        rProportion: 1 - bProportion,
+        rProportion,
         threshold,
-        isBUnderrepresented,
+        isUnderrepresented,
         highProb,
         lowProb,
         probability: prob,
-        explanation: person.trait === "B" 
-          ? (isBUnderrepresented ? "B underrepresented, B leaves at HIGH prob" : "B well-represented, B leaves at LOW prob")
-          : (isBUnderrepresented ? "B underrepresented (R well-represented), R leaves at LOW prob" : "B well-represented (R underrepresented), R leaves at HIGH prob")
+        explanation: isUnderrepresented 
+          ? `${person.trait} underrepresented, leaves at HIGH prob` 
+          : `${person.trait} well-represented, leaves at LOW prob`
       });
     }
 

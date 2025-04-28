@@ -65,13 +65,13 @@ export class TheoryChartVisualizer extends ChartVisualizer {
     // 1. p < t: B leaves with p_high, R leaves with p_low
     // 2. p > t: B leaves with p_low, R leaves with p_high
     
-    // Case 1: p < t
+    // Case 1: p < t (B underrepresented, R well-represented)
     const membership_rate_B_lower = (k/C) / ((k/C) + p_high);
     const membership_rate_R_lower = (k/C) / ((k/C) + p_low);
     const p_lower = (membership_rate_B_lower * b_pop) / 
                    (membership_rate_B_lower * b_pop + membership_rate_R_lower * r_pop);
     
-    // Case 2: p > t
+    // Case 2: p > t (B well-represented, R underrepresented)
     const membership_rate_B_upper = (k/C) / ((k/C) + p_low);
     const membership_rate_R_upper = (k/C) / ((k/C) + p_high);
     const p_upper = (membership_rate_B_upper * b_pop) / 
@@ -119,7 +119,57 @@ export class TheoryChartVisualizer extends ChartVisualizer {
     
     console.log("Final equilibrium points:", equilibriumPoints);
 
+    // Calculate stability metrics to determine likelihood of transitions
+    const stability_analysis = this.analyzeStability(k, C, b_pop, r_pop, p_high, p_low, t, p_lower, p_upper);
+    
+    console.log("Stability analysis:", stability_analysis);
+
     return equilibriumPoints;
+  }
+
+  analyzeStability(k, C, b_pop, r_pop, p_high, p_low, t, p_lower, p_upper) {
+    // Calculate the stability of each equilibrium point and the barrier between them
+    
+    // 1. Distance from threshold - smaller distance means less stability
+    const lower_distance = t - p_lower;
+    const upper_distance = p_upper - t;
+    
+    // 2. Strength of feedback - smaller difference between p_high and p_low means weaker feedback
+    const feedback_strength = p_high - p_low;
+    
+    // 3. Stochastic fluctuation size - depends on population size and join/leave rates
+    // Higher join/leave rates relative to population size create larger fluctuations
+    const fluctuation_factor = (k/C) + ((p_high + p_low) / 2);
+    
+    // 4. Barrier height - smaller barrier means easier transitions
+    const barrier_height = Math.min(lower_distance, upper_distance) * feedback_strength;
+    
+    // 5. Transition likelihood - higher value means more frequent transitions
+    const transition_likelihood = fluctuation_factor / barrier_height;
+    
+    return {
+      lower_distance,
+      upper_distance,
+      feedback_strength,
+      fluctuation_factor,
+      barrier_height,
+      transition_likelihood,
+      recommendations: {
+        increase_transitions: [
+          "Set threshold t closer to equilibrium points (currently " + t.toFixed(2) + ")",
+          "Reduce the difference between p_high and p_low (currently " + feedback_strength.toFixed(2) + ")",
+          "Increase join probability k (currently " + k.toFixed(2) + ")",
+          "Decrease number of clubs C (currently " + C + ")",
+          "Make trait distribution more balanced (currently B:" + b_pop.toFixed(2) + ", R:" + r_pop.toFixed(2) + ")"
+        ],
+        optimal_values: {
+          t_optimal: ((p_lower + p_upper) / 2).toFixed(2),
+          p_high_optimal: Math.min(0.9, p_high * 0.8).toFixed(2),
+          p_low_optimal: Math.max(0.1, p_low * 1.2).toFixed(2),
+          k_optimal: Math.min(1, k * 1.2).toFixed(2)
+        }
+      }
+    };
   }
 
   isStable(p, type, k, C, p_pop, p_high, p_low, t) {
@@ -133,7 +183,7 @@ export class TheoryChartVisualizer extends ChartVisualizer {
     const join_rate_R = (k/C) * (1-p_pop);
     
     if (type === 'lower') {
-      // For p < t
+      // For p < t (B underrepresented, R well-represented)
       // leave_rate_B = p * p_high
       // leave_rate_R = (1-p) * p_low
       
@@ -149,7 +199,7 @@ export class TheoryChartVisualizer extends ChartVisualizer {
       // But for R members, we need to consider d(net_flow_R)/d(1-p) = -d(net_flow_R)/dp
       return d_net_flow_B < 0 && d_net_flow_R > 0;
     } else if (type === 'upper') {
-      // For p > t
+      // For p > t (B well-represented, R underrepresented)
       // leave_rate_B = p * p_low
       // leave_rate_R = (1-p) * p_high
       

@@ -1,0 +1,128 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\title{Mathematical Model of Club Membership Dynamics}
+\author{ClubViz Documentation}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Model Overview}
+The club membership simulation models the dynamics of trait-based segregation in multiple clubs. The model consists of:
+\begin{itemize}
+    \item A population of $N$ individuals with two traits (B and R)
+    \item $C$ independent clubs
+    \item Time-discrete Markov chain dynamics
+\end{itemize}
+
+\section{Core Parameters}
+\begin{itemize}
+    \item $N$: Total population size
+    \item $C$: Number of clubs
+    \item $k$: Base join probability per turn
+    \item $t$: Leave threshold (proportion of B trait)
+    \item $p_{high}$: High leave probability (when trait is underrepresented)
+    \item $p_{low}$: Low leave probability (when trait is well-represented)
+    \item $r_{pop}$: Proportion of R trait in population
+    \item $b_{pop}$: Proportion of B trait in population ($1 - r_{pop}$)
+\end{itemize}
+
+\section{Markov Chain Model}
+Each club operates as an independent Markov chain. The state of a club at time $n$ is characterized by:
+\begin{itemize}
+    \item $B_n$: Number of B-trait members
+    \item $R_n$: Number of R-trait members
+    \item $T_n = B_n + R_n$: Total members
+\end{itemize}
+
+\subsection{Transition Probabilities}
+For each person and club in each turn:
+
+\subsubsection{Joining Process}
+\begin{itemize}
+    \item If person is not a member:
+    \[ P(\text{join}) = \frac{k}{C} \]
+    \item Join probability is independent of trait
+\end{itemize}
+
+\subsubsection{Leaving Process}
+\begin{itemize}
+    \item If person is a member and didn't just join:
+    \[ P(\text{leave}) = \begin{cases}
+        p_{high} & \text{if trait is underrepresented} \\
+        p_{low} & \text{if trait is well-represented}
+    \end{cases} \]
+    \item Underrepresentation is determined by:
+    \[ \text{is\_underrepresented} = \begin{cases}
+        \text{true} & \text{if } \frac{B_n}{T_n} < t \text{ for B trait} \\
+        \text{true} & \text{if } \frac{R_n}{T_n} < (1-t) \text{ for R trait}
+    \end{cases} \]
+\end{itemize}
+
+\section{Equilibrium Analysis}
+At equilibrium, the flow of members in and out of clubs balances for each trait.
+
+\subsection{Membership Rates}
+For B-trait individuals:
+\[ \text{membership\_rate}_B = \frac{k/C}{(k/C) + p_B} \]
+where $p_B$ is the effective leave probability for B-trait members.
+
+For R-trait individuals:
+\[ \text{membership\_rate}_R = \frac{k/C}{(k/C) + p_R} \]
+where $p_R$ is the effective leave probability for R-trait members.
+
+\subsection{Club Composition}
+The proportion of B in a club at equilibrium:
+\[ p = \frac{\text{membership\_rate}_B \cdot b_{pop}}{\text{membership\_rate}_B \cdot b_{pop} + \text{membership\_rate}_R \cdot r_{pop}} \]
+
+\subsection{Equilibrium Points}
+Two equilibrium points exist:
+
+1. Lower Equilibrium ($p < t$):
+\[ p_{lower} = \frac{\frac{k/C}{k/C + p_{high}} \cdot b_{pop}}{\frac{k/C}{k/C + p_{high}} \cdot b_{pop} + \frac{k/C}{k/C + p_{low}} \cdot r_{pop}} \]
+
+2. Upper Equilibrium ($p > t$):
+\[ p_{upper} = \frac{\frac{k/C}{k/C + p_{low}} \cdot b_{pop}}{\frac{k/C}{k/C + p_{low}} \cdot b_{pop} + \frac{k/C}{k/C + p_{high}} \cdot r_{pop}} \]
+
+\section{Stability Analysis}
+The stability of equilibrium points depends on:
+
+\subsection{Barrier Height}
+\[ \text{barrier\_height} = \min(t - p_{lower}, p_{upper} - t) \cdot (p_{high} - p_{low}) \]
+
+\subsection{Stochastic Fluctuations}
+\[ \text{fluctuation\_factor} = \frac{k}{C} + \frac{p_{high} + p_{low}}{2} \]
+
+\subsection{Transition Likelihood}
+\[ \text{transition\_likelihood} = \frac{\text{fluctuation\_factor}}{\text{barrier\_height}} \]
+
+\section{Key Properties}
+\begin{itemize}
+    \item \textbf{Independence}: Each club operates as an independent Markov chain
+    \item \textbf{Bistability}: Two stable equilibrium points exist
+    \item \textbf{Threshold Dependence}: Leave probabilities depend on trait representation relative to threshold
+    \item \textbf{Population Size Effects}: Smaller populations experience larger relative fluctuations
+\end{itemize}
+
+\section{Parameter Effects}
+\begin{itemize}
+    \item \textbf{Increasing $k$}: Higher join rates create more turnover
+    \item \textbf{Decreasing $C$}: Fewer clubs increase effective join rate per club
+    \item \textbf{Reducing $(p_{high} - p_{low})$}: Weaker feedback mechanism
+    \item \textbf{Balancing $r_{pop}$ and $b_{pop}$}: More equal representation
+\end{itemize}
+
+\section{Simulation Behavior}
+The simulation typically exhibits:
+\begin{itemize}
+    \item Initial rapid changes in club composition
+    \item Stabilization around equilibrium points
+    \item Occasional transitions between equilibria
+    \item Stochastic fluctuations around stable points
+\end{itemize}
+
+\end{document} 
