@@ -62,19 +62,19 @@ export class TheoryChartVisualizer extends ChartVisualizer {
     // p = (membership_rate_B * b_pop) / (membership_rate_B * b_pop + membership_rate_R * r_pop)
     
     // We have two cases to consider:
-    // 1. p < t: B leaves with p_high, R leaves with p_high
-    // 2. p > t: B leaves with p_low, R leaves with p_low
-    // (Symmetric threshold for both traits)
+    // 1. p < t: B leaves with p_high (underrepresented), R leaves with p_low (well-represented)
+    // 2. p > t: B leaves with p_low (well-represented), R leaves with p_high (underrepresented)
+    // Following the same logic in Simulator.js's calculateLeaveProbability()
     
-    // Case 1: p < t (both traits use high leave probability if underrepresented)
+    // Case 1: p < t (B underrepresented, uses high leave probability)
     const membership_rate_B_lower = (k/C) / ((k/C) + p_high);
-    const membership_rate_R_lower = (k/C) / ((k/C) + p_high);
+    const membership_rate_R_lower = (k/C) / ((k/C) + p_low);
     const p_lower = (membership_rate_B_lower * b_pop) /
                    (membership_rate_B_lower * b_pop + membership_rate_R_lower * r_pop);
     
-    // Case 2: p > t (both traits use low leave probability if well-represented)
+    // Case 2: p > t (B well-represented, uses low leave probability)
     const membership_rate_B_upper = (k/C) / ((k/C) + p_low);
-    const membership_rate_R_upper = (k/C) / ((k/C) + p_low);
+    const membership_rate_R_upper = (k/C) / ((k/C) + p_high);
     const p_upper = (membership_rate_B_upper * b_pop) /
                    (membership_rate_B_upper * b_pop + membership_rate_R_upper * r_pop);
     
@@ -225,12 +225,12 @@ export class TheoryChartVisualizer extends ChartVisualizer {
       // At the threshold, we need to check stability from both sides
       
       // From below (p < t):
-      // Net flow for B: join_rate_B - p * p_high
-      // Net flow for R: join_rate_R - (1-p) * p_low
+      // Net flow for B: join_rate_B - p * p_high (B is underrepresented)
+      // Net flow for R: join_rate_R - (1-p) * p_low (R is well-represented)
       
       // From above (p > t):
-      // Net flow for B: join_rate_B - p * p_low
-      // Net flow for R: join_rate_R - (1-p) * p_high
+      // Net flow for B: join_rate_B - p * p_low (B is well-represented)
+      // Net flow for R: join_rate_R - (1-p) * p_high (R is underrepresented)
       
       // For stability at threshold, the net flow from below should be positive
       // and the net flow from above should be negative
