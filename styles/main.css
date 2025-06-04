@@ -272,11 +272,11 @@ canvas {
 }
 
 .trait-R {
-  background-color: #e91e63;
+  background-color: #E91E63;
 }
 
 .trait-B {
-  background-color: #2196f3;
+  background-color: #2196F3;
 }
 
 .legend-label {
@@ -311,21 +311,27 @@ canvas {
 }
 
 .stat-section {
-  margin-bottom: 15px;
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 10px 0;
 }
 
 .stat-section h4 {
   color: #333;
-  margin-bottom: 8px;
-}
-
-.club-stat {
-  margin-left: 15px;
   margin-bottom: 10px;
 }
 
+.club-stat {
+  margin: 10px 0;
+  padding: 10px;
+  background: #f8f8f8;
+  border-radius: 4px;
+}
+
 .club-stat h5 {
-  color: #666;
+  color: #444;
   margin-bottom: 5px;
 }
 
@@ -348,6 +354,7 @@ canvas {
   .control-panel {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
   }
 
   .simulation-controls,
@@ -417,64 +424,6 @@ footer {
   text-align: center;
   padding: 20px;
   color: #666;
-}
-
-#stats.visible {
-  transform: translateX(0);
-}
-
-/* Stats Section */
-.stat-section {
-  background: #fff;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin: 10px 0;
-}
-
-.stat-section h4 {
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.club-stat {
-  margin: 10px 0;
-  padding: 10px;
-  background: #f8f8f8;
-  border-radius: 4px;
-  .turn-counter {
-    display: flex;
-    align-items: center;
-    font-size: 1em;
-    color: #333;
-    font-weight: 600;
-    padding: 8px 16px;
-    background-color: #f8f8f8;
-    border-radius: 4px;
-  }
-
-  #turnCounter {
-    margin-left: 5px;
-    color: #4caf50;
-  }
-}
-
-.club-stat h5 {
-  color: #444;
-  margin-bottom: 5px;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .control-panel {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .parameter-group {
-    display: block;
-    margin-bottom: 10px;
-  }
 }
 
 input[type="range"] {

@@ -1,41 +1,67 @@
 import { Visualizer } from "./Visualizer.js";
 
+/**
+ * @fileoverview Defines the GraphVisualizer class for rendering the simulation as a network graph using Cytoscape.js.
+ */
+
+/**
+ * Visualizes the simulation as a graph where people are nodes and shared club memberships can be represented as edges or groups.
+ * Uses the Cytoscape.js library for graph rendering and layout.
+ * Extends the base Visualizer class.
+ */
 export class GraphVisualizer extends Visualizer {
+  /**
+   * Constructs a GraphVisualizer instance.
+   * Sets up the DOM container for Cytoscape and initializes layout configuration.
+   * @param {HTMLCanvasElement} canvas - The main canvas element (will be hidden, Cytoscape uses its own div).
+   * @param {CanvasRenderingContext2D} ctx - The 2D rendering context (not directly used by this visualizer).
+   * @param {number} width - The initial width of the graph container.
+   * @param {number} height - The initial height of the graph container.
+   */
   constructor(canvas, ctx, width, height) {
     super(canvas, ctx, width, height);
-    this.cy = null;
+    this.cy = null; // Cytoscape instance
     this.container = canvas.parentElement;
-    this.graphContainer = document.createElement("div");
+    this.graphContainer = document.createElement("div"); // DOM element to host the Cytoscape graph
     this.graphContainer.id = "cy";
     this.graphContainer.style.width = `${width}px`;
     this.graphContainer.style.height = `${height}px`;
-    this.container.appendChild(this.graphContainer);
+    this.graphContainer.style.display = "none"; // Initially hidden
+    this.container.appendChild(this.graphContainer); // Append to canvas's parent
 
+    // Configuration for the Cytoscape layout algorithm (e.g., Cose - Compound Spring Embedder)
     this.layoutConfig = {
       name: "cose",
-      animate: false,
-      randomize: true,
-      componentSpacing: 40,
+      animate: false,       // Disable animations during layout for performance
+      randomize: true,     // Randomize node positions before layout
+      componentSpacing: 40, // Increased spacing between connected components
       nodeRepulsion: function() {
         return 20000;
-      },
-      edgeElasticity: 800,
-      gravity: 200,
-      nodeOverlap: 4,
-      idealEdgeLength: 30,
+      }, // Stronger repulsion between nodes
+      edgeElasticity: 800,   // Elasticity of edges
+      gravity: 200,          // Attracts nodes to the center
+      nodeOverlap: 4,        // How much to fit subgraph within parent
+      idealEdgeLength: 30,   // Preferred edge length
       refresh: 20,
-      fit: true,
-      padding: 30,
+      fit: true,            // Whether to fit the viewport to the graph
+      padding: 30,          // Padding around the graph
     };
   }
 
+  /**
+   * Initializes the GraphVisualizer with clubs and people data.
+   * Creates Cytoscape nodes for people and edges representing shared club memberships.
+   * @param {Club[]} clubs - An array of Club objects.
+   * @param {Person[]} people - An array of Person objects.
+   */
   initialize(clubs, people) {
     this.clubs = clubs;
     this.people = people;
 
-    // Hide canvas and show graph container
+    // Hide the original canvas and show the Cytoscape graph container
     this.canvas.style.display = "none";
     this.graphContainer.style.display = "block";
+    this.updateDimensions(this.width, this.height); // Ensure graph container has correct size
 
     try {
       // Initialize Cytoscape instance
@@ -94,6 +120,13 @@ export class GraphVisualizer extends Visualizer {
     }
   }
 
+  /**
+   * Creates an array of elements (nodes and edges) for Cytoscape based on people and clubs.
+   * Nodes represent people, and edges represent two people being in the same club.
+   * @param {Club[]} clubs - An array of Club objects.
+   * @param {Person[]} people - An array of Person objects.
+   * @returns {object[]} Array of Cytoscape element definitions.
+   */
   createElements(clubs, people) {
     const elements = [];
 
@@ -104,7 +137,7 @@ export class GraphVisualizer extends Visualizer {
         data: {
           id: `p${person.id}`,
           label: `P${person.id}`,
-          color: person.trait === "R" ? "#e91e63" : "#2196f3",
+          color: person.trait === "R" ? "#E91E63" : "#2196F3",
           type: "person",
         },
       });
@@ -131,6 +164,9 @@ export class GraphVisualizer extends Visualizer {
     return elements;
   }
 
+  /**
+   * Redraws the graph. For Cytoscape, this involves updating elements and re-running the layout.
+   */
   draw() {
     if (this.cy) {
       try {
@@ -148,18 +184,28 @@ export class GraphVisualizer extends Visualizer {
     }
   }
 
+  /**
+   * Updates the dimensions of the Cytoscape container when the window or parent resizes.
+   * @param {number} width - The new width.
+   * @param {number} height - The new height.
+   */
   updateDimensions(width, height) {
-    super.updateDimensions(width, height);
+    super.updateDimensions(width, height); // Update base class dimensions
     if (this.graphContainer) {
       this.graphContainer.style.width = `${width}px`;
       this.graphContainer.style.height = `${height}px`;
       if (this.cy) {
-        this.cy.resize();
+        this.cy.resize(); // Notify Cytoscape of size change
         this.cy.fit();
       }
     }
   }
 
+  /**
+   * Cleans up resources used by the GraphVisualizer.
+   * Destroys the Cytoscape instance and removes its container from the DOM.
+   * Makes the original canvas visible again.
+   */
   cleanup() {
     try {
       if (this.cy) {
@@ -169,7 +215,7 @@ export class GraphVisualizer extends Visualizer {
       if (this.graphContainer && this.graphContainer.parentNode) {
         this.graphContainer.parentNode.removeChild(this.graphContainer);
       }
-      this.canvas.style.display = "block";
+      this.canvas.style.display = "block"; // Show the original canvas (though it might be empty)
     } catch (error) {
       console.error("Error cleaning up GraphVisualizer:", error);
     }

@@ -1,12 +1,42 @@
 import { ChartVisualizer } from "./ChartVisualizer.js";
 import { getCurrentConfig } from "../config.js";
 
+/**
+ * @fileoverview Defines the TheoryChartVisualizer class.
+ * Extends ChartVisualizer to overlay theoretical equilibrium points on the trait proportion chart.
+ */
+
+/**
+ * Visualizes actual trait proportions alongside calculated theoretical equilibrium points.
+ * This helps in comparing the simulation's emergent behavior with theoretical predictions.
+ * Extends the ChartVisualizer class.
+ */
 export class TheoryChartVisualizer extends ChartVisualizer {
+  /**
+   * Constructs a TheoryChartVisualizer instance.
+   * @param {HTMLCanvasElement} canvas - The main canvas element.
+   * @param {CanvasRenderingContext2D} ctx - The 2D rendering context.
+   * @param {number} width - Initial width of the chart container.
+   * @param {number} height - Initial height of the chart container.
+   */
   constructor(canvas, ctx, width, height) {
     super(canvas, ctx, width, height);
-    this.config = getCurrentConfig();
+    this.config = getCurrentConfig(); // Store current config for theoretical calculations
+    this.equilibriumLines = []; // To store dataset objects for equilibrium lines
   }
 
+  /**
+   * Calculates theoretical equilibrium points for the proportion of trait B in a club.
+   * Based on a model where join rates and leave rates for each trait balance out.
+   * Considers different leave probabilities (p_high, p_low) based on whether trait B
+   * is underrepresented (proportion < threshold t) or well-represented (proportion > threshold t).
+   * 
+   * @param {object} config - The simulation configuration object containing parameters like
+   *                          joinProbability (k), totalClubs (C), leaveHighProb (p_high),
+   *                          leaveLowProb (p_low), leaveProbabilityThreshold (t).
+   * @returns {object[]} An array of objects, each representing an equilibrium or reference point.
+   *                     Each object has `value` (the proportion) and `type` (e.g., 'lower', 'upper', 'threshold').
+   */
   calculateEquilibriumPoints(config) {
     const k = config.joinProbability;
     const C = config.totalClubs;
@@ -14,479 +44,356 @@ export class TheoryChartVisualizer extends ChartVisualizer {
     const p_low = config.leaveLowProb;
     const t = config.leaveProbabilityThreshold;
     
-    // Get trait ratio from the slider - this is r_pop (proportion of R in population)
     const traitRatioSlider = document.getElementById("traitRatio");
-    const r_pop = parseFloat(traitRatioSlider.value) || 0.5; // R proportion
-    const b_pop = 1 - r_pop; // B proportion
+    // r_pop is the proportion of Trait R in the overall population
+    const r_pop = traitRatioSlider ? parseFloat(traitRatioSlider.value) || 0.5 : 0.5; 
+    const b_pop = 1 - r_pop; // b_pop is the proportion of Trait B in the overall population
 
-    // Debug log to verify the calculation
-    console.log("Population proportions:", {
-      R_proportion: r_pop,
-      B_proportion: b_pop
-    });
-    
-    console.log("Configuration values:", {
-      joinProbability: k,
-      totalClubs: C,
-      leaveHighProb: p_high,
-      leaveLowProb: p_low,
-      leaveProbabilityThreshold: t
-    });
+    console.log("TheoryChart: Population proportions for equilibrium calc:", { R_proportion: r_pop, B_proportion: b_pop });
+    console.log("TheoryChart: Config for equilibrium calc:", { k, C, p_high, p_low, t });
 
     let equilibriumPoints = [];
 
-    // MARKOV CHAIN MODEL: Each club is an independent Markov chain
-    // A person's membership in one club doesn't affect their behavior in other clubs
-    
-    // For each club, we need to model:
-    // 1. The flow of B-trait people in and out
-    // 2. The flow of R-trait people in and out
-    // At equilibrium, these flows balance
-    
-    // For B-trait people:
-    // - Join rate: (k/C) * b_pop * (1 - membership_rate_B)
-    // - Leave rate: membership_rate_B * leave_prob_B
-    // Where membership_rate_B is the proportion of B-trait people who are members
-    
-    // For R-trait people:
-    // - Join rate: (k/C) * r_pop * (1 - membership_rate_R)
-    // - Leave rate: membership_rate_R * leave_prob_R
-    // Where membership_rate_R is the proportion of R-trait people who are members
-    
-    // At equilibrium, join rate = leave rate for each trait
-    // This gives us:
-    // membership_rate_B = (k/C) / ((k/C) + leave_prob_B)
-    // membership_rate_R = (k/C) / ((k/C) + leave_prob_R)
-    
-    // The proportion of B in the club is:
-    // p = (membership_rate_B * b_pop) / (membership_rate_B * b_pop + membership_rate_R * r_pop)
-    
-    // We have two cases to consider:
-    // 1. p < t: B leaves with p_high (underrepresented), R leaves with p_low (well-represented)
-    // 2. p > t: B leaves with p_low (well-represented), R leaves with p_high (underrepresented)
-    // Following the same logic in Simulator.js's calculateLeaveProbability()
-    
-    // Case 1: p < t (B underrepresented, uses high leave probability)
-    const membership_rate_B_lower = (k/C) / ((k/C) + p_high);
-    const membership_rate_R_lower = (k/C) / ((k/C) + p_low);
-    const p_lower = (membership_rate_B_lower * b_pop) /
-                   (membership_rate_B_lower * b_pop + membership_rate_R_lower * r_pop);
-    
-    // Case 2: p > t (B well-represented, uses low leave probability)
-    const membership_rate_B_upper = (k/C) / ((k/C) + p_low);
-    const membership_rate_R_upper = (k/C) / ((k/C) + p_high);
-    const p_upper = (membership_rate_B_upper * b_pop) /
-                   (membership_rate_B_upper * b_pop + membership_rate_R_upper * r_pop);
-    
-    // Verify symmetry: if we swap B and R, we should get complementary values
-    const r_lower = 1 - p_lower;
-    const r_upper = 1 - p_upper;
-    
-    console.log("Markov chain equilibrium calculations:", {
-      b_pop,
-      r_pop,
-      p_high,
-      p_low,
-      t,
-      membership_rate_B_lower,
-      membership_rate_R_lower,
-      p_lower,
-      r_lower,
-      membership_rate_B_upper,
-      membership_rate_R_upper,
-      p_upper,
-      r_upper
-    });
-    
-    // ALWAYS add both equilibrium points regardless of validity or stability
-    equilibriumPoints.push({
-      value: p_lower,
-      type: 'lower'
-    });
-    
-    equilibriumPoints.push({
-      value: p_upper,
-      type: 'upper'
-    });
-    
-    // Always add threshold point as a reference line
-    equilibriumPoints.push({
-      value: t,
-      type: 'threshold'
-    });
-    
-    // Add population proportion as a reference line
-    equilibriumPoints.push({
-      value: b_pop,
-      type: 'population'
-    });
+    // Model: At equilibrium, for each trait, (Join Rate) = (Leave Rate)
+    // Join Rate for a trait = (k/C) * (population_proportion_of_trait) * (1 - proportion_of_trait_members_in_club_already)
+    // More simply, assuming a large pool of non-members:
+    // Effective Inflow Rate for B = (k/C) * b_pop 
+    // Effective Inflow Rate for R = (k/C) * r_pop
+    // Let m_B = proportion of B-people who are members of this club (club's B-membership saturation for B-people)
+    // Let m_R = proportion of R-people who are members of this club
+    // At equilibrium for B-people: (k/C) * b_pop * (1 - m_B) = m_B * actual_leave_prob_B
+    // => m_B = ( (k/C) * b_pop ) / ( (k/C) * b_pop + actual_leave_prob_B )
+    // Simplified further if we consider join probability for an individual B person to a club: (k/C)
+    // Then at equilibrium for the B population in the club:
+    // Number of B joining = (Total B people NOT in club) * (k/C)
+    // Number of B leaving = (Total B people IN club) * actual_leave_prob_B
+    // Let N_B_pop = total B people in sim.
+    // Let N_B_club = number of B in club.
+    // (N_B_pop - N_B_club) * (k/C) = N_B_club * actual_leave_prob_B
+    // Let p = N_B_club / (N_B_club + N_R_club) be the proportion of B in the club.
 
-    // Sort points in ascending order
+    // The derivation used in the code: 
+    // membership_rate_B = (k/C) / ((k/C) + actual_leave_prob_B_for_a_B_person)
+    // membership_rate_R = (k/C) / ((k/C) + actual_leave_prob_R_for_an_R_person)
+    // Then, p (proportion of B in club) = (m_B * b_pop) / (m_B * b_pop + m_R * r_pop)
+
+    // Case 1: p < t (B is underrepresented in the club)
+    //   - B people leave with p_high.
+    //   - R people leave with p_low (as R is overrepresented if B is under).
+    const mb_lower_case = (k/C) / ((k/C) + p_high); // membership rate for B people when B is underrepresented
+    const mr_lower_case = (k/C) / ((k/C) + p_low);  // membership rate for R people when B is underrepresented (so R is over)
+    const p_lower = (mb_lower_case * b_pop) / 
+                    (mb_lower_case * b_pop + mr_lower_case * r_pop);
+    if (isFinite(p_lower)) {
+        equilibriumPoints.push({ value: p_lower, type: 'lower', stable: this.isStable(p_lower, 'lower', k, C, b_pop, p_high, p_low, t) });
+    }
+    
+    // Case 2: p > t (B is well-represented in the club)
+    //   - B people leave with p_low.
+    //   - R people leave with p_high (as R is underrepresented if B is over).
+    const mb_upper_case = (k/C) / ((k/C) + p_low);  // membership rate for B people when B is well-represented
+    const mr_upper_case = (k/C) / ((k/C) + p_high); // membership rate for R people when B is well-represented (so R is under)
+    const p_upper = (mb_upper_case * b_pop) / 
+                    (mb_upper_case * b_pop + mr_upper_case * r_pop);
+    if (isFinite(p_upper)) {
+        equilibriumPoints.push({ value: p_upper, type: 'upper', stable: this.isStable(p_upper, 'upper', k, C, b_pop, p_high, p_low, t) });
+    }
+        
+    // Add threshold 't' as a reference line
+    equilibriumPoints.push({ value: t, type: 'threshold', stable: false }); // Threshold itself isn't an equilibrium
+    
+    // Add population proportion of B (b_pop) as a reference line
+    // This is where p would be if club membership was random and traits didn't affect leaving.
+    equilibriumPoints.push({ value: b_pop, type: 'population', stable: false });
+
+    // Filter out NaN/undefined values and sort points
+    equilibriumPoints = equilibriumPoints.filter(pt => isFinite(pt.value) && pt.value >= 0 && pt.value <= 1);
     equilibriumPoints.sort((a, b) => a.value - b.value);
     
-    console.log("Final equilibrium points:", equilibriumPoints);
+    // Remove duplicate points (can happen if, e.g., p_lower = t)
+    equilibriumPoints = equilibriumPoints.filter((pt, index, self) => 
+        index === self.findIndex(p => p.value === pt.value && p.type === pt.type) || 
+        index === self.findIndex(p => p.value === pt.value) // Keep first instance of a value if types differ but values are same
+    );
+    // A simpler unique filter if type doesn't strictly matter for unique value lines:
+    // equilibriumPoints = [...new Map(equilibriumPoints.map(item => [item.value, item])).values()];
 
-    // Calculate stability metrics to determine likelihood of transitions
-    const stability_analysis = this.analyzeStability(k, C, b_pop, r_pop, p_high, p_low, t, p_lower, p_upper);
-    
-    console.log("Stability analysis:", stability_analysis);
+
+    console.log("TheoryChart: Calculated equilibrium points:", equilibriumPoints);
+
+    // Perform stability analysis (console logs for now)
+    this.analyzeStability(k, C, b_pop, r_pop, p_high, p_low, t, p_lower, p_upper);
 
     return equilibriumPoints;
   }
 
+  /**
+   * Analyzes the stability of the calculated equilibrium points (p_lower, p_upper) 
+   * and the barrier between them. This is more of a qualitative analysis.
+   * Outputs to console.
+   * @param {number} k - Join probability factor.
+   * @param {number} C - Total number of clubs.
+   * @param {number} b_pop - Proportion of trait B in the population.
+   * @param {number} r_pop - Proportion of trait R in the population.
+   * @param {number} p_high - High leave probability.
+   * @param {number} p_low - Low leave probability.
+   * @param {number} t - Leave probability threshold.
+   * @param {number} p_lower - The lower equilibrium point for B proportion.
+   * @param {number} p_upper - The upper equilibrium point for B proportion.
+   */
   analyzeStability(k, C, b_pop, r_pop, p_high, p_low, t, p_lower, p_upper) {
-    // Calculate the stability of each equilibrium point and the barrier between them
+    const lower_dist_from_t = Math.abs(t - p_lower);
+    const upper_dist_from_t = Math.abs(p_upper - t);
+    const feedback_strength = p_high - p_low; // Difference in leave probabilities
     
-    // 1. Distance from threshold - smaller distance means less stability
-    const lower_distance = t - p_lower;
-    const upper_distance = p_upper - t;
+    // A simple proxy for fluctuation potential around an equilibrium.
+    // Higher k/C means more joining events, higher average leave prob means more leaving.
+    const typical_event_rate_factor = (k/C) + (p_high + p_low) / 2;
+
+    // A conceptual measure of the 'energy barrier' to cross from one state to another via the threshold t.
+    // Smaller distance to threshold or weaker feedback makes the barrier smaller.
+    let barrier_lower_to_t = lower_dist_from_t * feedback_strength;
+    let barrier_upper_to_t = upper_dist_from_t * feedback_strength;
     
-    // 2. Strength of feedback - smaller difference between p_high and p_low means weaker feedback
-    const feedback_strength = p_high - p_low;
-    
-    // 3. Stochastic fluctuation size - depends on population size and join/leave rates
-    // Higher join/leave rates relative to population size create larger fluctuations
-    const fluctuation_factor = (k/C) + ((p_high + p_low) / 2);
-    
-    // 4. Barrier height - smaller barrier means easier transitions
-    const barrier_height = Math.min(lower_distance, upper_distance) * feedback_strength;
-    
-    // 5. Transition likelihood - higher value means more frequent transitions
-    const transition_likelihood = fluctuation_factor / barrier_height;
-    
-    return {
-      lower_distance,
-      upper_distance,
-      feedback_strength,
-      fluctuation_factor,
-      barrier_height,
-      transition_likelihood,
-      recommendations: {
-        increase_transitions: [
-          "Set threshold t closer to equilibrium points (currently " + t.toFixed(2) + ")",
-          "Reduce the difference between p_high and p_low (currently " + feedback_strength.toFixed(2) + ")",
-          "Increase join probability k (currently " + k.toFixed(2) + ")",
-          "Decrease number of clubs C (currently " + C + ")",
-          "Make trait distribution more balanced (currently B:" + b_pop.toFixed(2) + ", R:" + r_pop.toFixed(2) + ")"
-        ],
-        optimal_values: {
-          t_optimal: ((p_lower + p_upper) / 2).toFixed(2),
-          p_high_optimal: Math.min(0.9, p_high * 0.8).toFixed(2),
-          p_low_optimal: Math.max(0.1, p_low * 1.2).toFixed(2),
-          k_optimal: Math.min(1, k * 1.2).toFixed(2)
-        }
-      }
-    };
+    console.log("TheoryChart: Stability Analysis Metrics", {
+      p_lower: p_lower,
+      p_upper: p_upper,
+      threshold_t: t,
+      lower_dist_from_t,
+      upper_dist_from_t,
+      feedback_strength, // Larger is more separating
+      typical_event_rate_factor, // Proxy for 'noise' or 'temperature'
+      barrier_lower_to_t, // Conceptual barrier height from p_lower to t
+      barrier_upper_to_t  // Conceptual barrier height from p_upper to t
+    });
+    // Note: This analysis is qualitative and for informational purposes.
+    // Real stability depends on stochastic effects not fully captured here.
+    return { /* Can return these values if needed elsewhere */ };
   }
 
-  isStable(p, type, k, C, p_pop, p_high, p_low, t) {
-    // For stability, we need to check if the system returns to equilibrium after small perturbations
-    // This means checking the derivative of the net flow at the equilibrium point
-    
-    // Net flow for B members = join_rate_B - leave_rate_B
-    // Net flow for R members = join_rate_R - leave_rate_R
-    
-    const join_rate_B = (k/C) * p_pop;
-    const join_rate_R = (k/C) * (1-p_pop);
-    
+  /**
+   * Checks the local stability of a given equilibrium point `p`.
+   * An equilibrium is stable if, after a small perturbation, the system tends to return to `p`.
+   * This is approximated by checking the sign of the derivative of the net flow of B-trait members.
+   * If d(NetFlow_B)/dp < 0, it's stable for B. 
+   * For overall stability, R-trait flow must also be considered, effectively d(NetFlow_R)/dr < 0, which is -d(NetFlow_R)/dp < 0 or d(NetFlow_R)/dp > 0.
+   *
+   * @param {number} p_eq - The equilibrium proportion of B-trait members being checked (e.g., p_lower or p_upper).
+   * @param {string} type - Type of equilibrium ('lower' or 'upper') to determine which leave probabilities apply around p_eq.
+   * @param {number} k - Join probability factor.
+   * @param {number} C - Total number of clubs.
+   * @param {number} b_pop - Proportion of trait B in the population.
+   * @param {number} p_high - High leave probability.
+   * @param {number} p_low - Low leave probability.
+   * @param {number} t - Leave probability threshold.
+   * @returns {boolean} True if the point is considered locally stable, false otherwise.
+   */
+  isStable(p_eq, type, k, C, b_pop, p_high, p_low, t) {
+    // Simplified net flow: F(p) = Inflow_B(p) - Outflow_B(p)
+    // Inflow_B is roughly constant from b_pop: (k/C) * b_pop * (1 - m_B(p)) where m_B is B-membership saturation
+    // Outflow_B depends on p: m_B(p) * leave_prob_B(p)
+    // The model used in calculateEquilibriumPoints is based on m_B and m_R.
+    // For local stability, we check if a small increase in p (proportion of B in club)
+    // leads to a net outflow of B, and a small decrease leads to a net inflow.
+    // This means d(NetFlow_B)/dp should be negative at p_eq.
+    // And for R, d(NetFlow_R)/dr should be negative (where r=1-p), so -d(NetFlow_R)/dp < 0 => d(NetFlow_R)/dp > 0
+
+    let d_NetFlow_B_dp; // Derivative of net flow of B with respect to p
+    let d_NetFlow_R_dp; // Derivative of net flow of R with respect to p
+
+    // Effective join probability for an individual of a trait to a club (simplified)
+    const common_join_term = k / C;
+
     if (type === 'lower') {
-      // For p < t (B underrepresented, R well-represented)
-      // leave_rate_B = p * p_high
-      // leave_rate_R = (1-p) * p_low
-      
-      // Derivative of net flow for B at equilibrium:
-      // d(join_rate_B - leave_rate_B)/dp = 0 - p_high
-      const d_net_flow_B = -p_high;
-      
-      // Derivative of net flow for R at equilibrium:
-      // d(join_rate_R - leave_rate_R)/dp = 0 - (-p_low)
-      const d_net_flow_R = p_low;
-      
-      // For stability, both derivatives should be negative
-      // But for R members, we need to consider d(net_flow_R)/d(1-p) = -d(net_flow_R)/dp
-      return d_net_flow_B < 0 && d_net_flow_R > 0;
+      // Around p_lower, we assume p < t.
+      // B members leave with p_high. R members leave with p_low.
+      // NetFlow_B = b_pop * common_join_term * (1-p) - p * p_high * p (if p is fraction of B people in club, complex)
+      // Using the formulation from calculateEquilibriumPoints implicitly:
+      // At p_lower, B is underrepresented. A slight increase in p (still < t) means B still leaves at p_high.
+      // d(Outflow_B)/dp associated with p_high. d(Inflow_B)/dp is complex, but if m_B increases, inflow decreases.
+      // A simpler view: if p increases, does B get pushed out more or pulled in less?
+      // If p is proportion of B in club: d(p * LeaveProb_B)/dp. If LeaveProb_B is const (p_high), then it's p_high.
+      // So, d_NetFlow_B_dp tends to be negative (dominated by increased outflow or decreased inflow).
+      d_NetFlow_B_dp = -p_high; // Approximation: dominant term from outflow change.
+      d_NetFlow_R_dp = p_low;  // Approximation: dominant term from outflow change for R (opposite sign due to dp for B).
     } else if (type === 'upper') {
-      // For p > t (B well-represented, R underrepresented)
-      // leave_rate_B = p * p_low
-      // leave_rate_R = (1-p) * p_high
-      
-      // Derivative of net flow for B at equilibrium:
-      // d(join_rate_B - leave_rate_B)/dp = 0 - p_low
-      const d_net_flow_B = -p_low;
-      
-      // Derivative of net flow for R at equilibrium:
-      // d(join_rate_R - leave_rate_R)/dp = 0 - (-p_high)
-      const d_net_flow_R = p_high;
-      
-      // For stability, both derivatives should be negative
-      // But for R members, we need to consider d(net_flow_R)/d(1-p) = -d(net_flow_R)/dp
-      return d_net_flow_B < 0 && d_net_flow_R > 0;
-    } else if (type === 'threshold') {
-      // At the threshold, we need to check stability from both sides
-      
-      // From below (p < t):
-      // Net flow for B: join_rate_B - p * p_high (B is underrepresented)
-      // Net flow for R: join_rate_R - (1-p) * p_low (R is well-represented)
-      
-      // From above (p > t):
-      // Net flow for B: join_rate_B - p * p_low (B is well-represented)
-      // Net flow for R: join_rate_R - (1-p) * p_high (R is underrepresented)
-      
-      // For stability at threshold, the net flow from below should be positive
-      // and the net flow from above should be negative
-      
-      // Net flow for B from below:
-      const net_flow_B_below = join_rate_B - t * p_high;
-      
-      // Net flow for B from above:
-      const net_flow_B_above = join_rate_B - t * p_low;
-      
-      // Debug log for threshold stability
-      console.log("Threshold stability check:", {
-        t,
-        join_rate_B,
-        net_flow_B_below,
-        net_flow_B_above,
-        isStable: net_flow_B_below > 0 && net_flow_B_above < 0
-      });
-      
-      // For stability at threshold:
-      // net_flow_B_below > 0 (pushing up towards threshold)
-      // net_flow_B_above < 0 (pushing down towards threshold)
-      
-      return net_flow_B_below > 0 && net_flow_B_above < 0;
+      // Around p_upper, we assume p > t.
+      // B members leave with p_low. R members leave with p_high.
+      d_NetFlow_B_dp = -p_low;
+      d_NetFlow_R_dp = p_high;
+    } else {
+      return false; // Threshold or population points are not stable equilibria themselves.
     }
     
-    return false;
+    // Condition for stability: B flow pushes p down if p increases (d_NetFlow_B_dp < 0)
+    // AND R flow also pushes p down if p increases (meaning R members decrease, d_NetFlow_R_dp > 0, pushing r down)
+    const stable = d_NetFlow_B_dp < 0 && d_NetFlow_R_dp > 0;
+    // console.log(`TheoryChart: Stability for type '${type}' at p_eq=${p_eq.toFixed(3)}: dNetB/dp=${d_NetFlow_B_dp.toFixed(3)}, dNetR/dp=${d_NetFlow_R_dp.toFixed(3)} => stable=${stable}`);
+    return stable;
   }
 
+  /**
+   * Initializes or reconfigures the Chart.js instance for this visualizer.
+   * This method is typically called after the base ChartVisualizer's initialize and initializeCharts,
+   * or whenever the theoretical lines need to be redrawn based on new parameters.
+   * It calculates equilibrium points and adds them as distinct, styled datasets to the chart.
+   */
   initializeCharts() {
-    // Get current config
-    this.config = getCurrentConfig();
+    // It's assumed that super.initializeCharts() or a similar setup for basic chart 
+    // has already been done if this method is called in a context of overriding/extending.
+    // If this visualizer fully owns chart creation, super.initializeCharts() might not be needed here
+    // or this method replaces it.
+    // For this class, `super.initialize` calls `super.initializeCharts`, then this one adds to it.
+
+    if (!this.chart || !this.clubs || this.clubs.length === 0) {
+      console.warn("TheoryChartVisualizer: Chart or club data not ready for initializing theory lines.");
+      // Attempt to call the base class chart initialization if chart doesn't exist
+      // This ensures that the basic chart structure is in place.
+      if (!this.chart && typeof super.initializeCharts === 'function') {
+          super.initializeCharts(); 
+          if (!this.chart) { // If still no chart, cannot proceed
+            console.error("TheoryChartVisualizer: Base chart initialization failed.");
+            return;
+          }
+      } else if (!this.chart) {
+          return; // Cannot proceed without a chart instance
+      }
+    }
+
+    this.config = getCurrentConfig(); // Ensure config is up-to-date for calculations
     const equilibriumPoints = this.calculateEquilibriumPoints(this.config);
-    
-    console.log("Initializing chart with equilibrium points:", equilibriumPoints);
 
-    const datasets = this.clubs.map((club) => ({
-      label: `Club ${club.id}`,
-      data: this.clubData.get(club.id).ratios,
-      borderColor: `hsl(${(club.id * 137.5) % 360}, 70%, 50%)`,
-      borderWidth: 1,
-      pointRadius: 2,
-      fill: false,
-    }));
+    // Prepare new datasets: start with existing club data lines
+    // Filter out any old theory lines before adding new ones to prevent duplication.
+    const existingClubDatasets = this.chart.data.datasets.filter(
+        dataset => !(dataset.isTheoryLine)
+    );
+    let newDatasets = [...existingClubDatasets];
 
-    // Add equilibrium lines
+    // Add new datasets for each equilibrium point/reference line
     equilibriumPoints.forEach(point => {
-      let label, color, borderDash, borderWidth;
-      
-      const formattedValue = (point.value * 100).toFixed(1);
-      
+      let label, color, borderDash, borderWidth, pointStyle = 'line';
+      const formattedValue = (point.value * 100).toFixed(1); // Value as percentage
+
       switch(point.type) {
         case 'upper':
-          label = `Upper Equilibrium (${formattedValue}% B)`;
-          color = 'rgba(255, 0, 0, 0.8)';
-          borderDash = [5, 5];
-          borderWidth = 3;
+          label = `Upper Eq. (${formattedValue}% B${point.stable ? '*':''})`; // Mark stable points
+          color = 'rgba(255, 0, 0, 0.7)'; // Red
+          borderDash = [8, 4]; // Dashed line
+          borderWidth = 2.5;
           break;
         case 'lower':
-          label = `Lower Equilibrium (${formattedValue}% B)`;
-          color = 'rgba(0, 0, 255, 0.8)';
-          borderDash = [5, 5];
-          borderWidth = 3;
+          label = `Lower Eq. (${formattedValue}% B${point.stable ? '*':''})`; // Mark stable points
+          color = 'rgba(0, 0, 255, 0.7)'; // Blue
+          borderDash = [8, 4]; // Dashed line
+          borderWidth = 2.5;
           break;
         case 'threshold':
           label = `Threshold (${formattedValue}% B)`;
-          color = 'rgba(0, 255, 0, 0.8)';
+          color = 'rgba(0, 128, 0, 0.7)'; // Green
           borderDash = [10, 5];
-          borderWidth = 2;
+          borderWidth = 1.5;
           break;
         case 'population':
-          label = `Population Ratio (${formattedValue}% B)`;
-          color = 'rgba(128, 0, 128, 0.8)';
+          label = `Pop. Ratio (${formattedValue}% B)`;
+          color = 'rgba(128, 0, 128, 0.7)'; // Purple
           borderDash = [2, 2];
-          borderWidth = 2;
+          borderWidth = 1.5;
           break;
         default:
-          label = `${point.type.charAt(0).toUpperCase() + point.type.slice(1)} (${formattedValue}% B)`;
-          color = 'rgba(100, 100, 100, 0.7)';
+          label = `${point.type.charAt(0).toUpperCase() + point.type.slice(1)} (${formattedValue}%)`;
+          color = 'rgba(100, 100, 100, 0.6)'; // Grey
           borderDash = [5, 5];
-          borderWidth = 2;
+          borderWidth = 1;
       }
 
-      // Create an array with the equilibrium value for each turn
-      const dataPoints = Array(this.clubData.get(this.clubs[0].id).labels.length).fill(point.value);
+      // Create an array of the same equilibrium value, matching the length of current x-axis labels
+      const numDataPoints = this.chart.data.labels?.length || 1;
+      const dataPoints = Array(numDataPoints).fill(point.value * 100); // Convert to percentage for y-axis
 
-      datasets.push({
+      newDatasets.push({
         label: label,
         data: dataPoints,
         borderColor: color,
+        backgroundColor: color, // For legend box
         borderWidth: borderWidth,
         borderDash: borderDash,
-        pointRadius: 0,
+        pointRadius: 0, // No points on theory lines
         fill: false,
-        // Make sure equilibrium lines are drawn on top
-        order: 0
+        tension: 0,
+        order: -1, // Attempt to draw theory lines underneath actual data lines
+        isTheoryLine: true // Custom property to identify these lines later
       });
     });
 
-    if (this.chart) {
-      this.chart.destroy();
-    }
-
-    // Create a new chart with the datasets
-    this.chart = new Chart(this.chartCanvas.getContext("2d"), {
-      type: "line",
-      data: {
-        labels: [0],
-        datasets: datasets,
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        scales: {
-          x: {
-            title: {
-              display: true,
-              text: "Turn",
-            },
-            grid: {
-              display: true,
-              drawBorder: true,
-            }
-          },
-          y: {
-            title: {
-              display: true,
-              text: "Proportion of B",
-            },
-            min: 0,
-            max: 1,
-            grid: {
-              display: true,
-              drawBorder: true,
-            },
-            ticks: {
-              stepSize: 0.1
-            }
-          },
-        },
-        plugins: {
-          legend: {
-            display: true,
-            position: "top",
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                if (context.dataset.label.includes('Equilibrium')) {
-                  return context.dataset.label;
-                }
-                return `${context.dataset.label}: ${context.raw.toFixed(3)}`;
-              }
-            }
-          }
-        },
-      },
-    });
-    
-    console.log("Chart initialized with datasets:", datasets);
+    this.chart.data.datasets = newDatasets;
+    this.chart.update(); // Update the chart with new/modified datasets
+    console.log("TheoryChartVisualizer: Chart updated with equilibrium lines.");
   }
 
+  /**
+   * Overrides the base class initialize method.
+   * Sets the local configuration and then calls the superclass's initialize method,
+   * which in turn will call this class's overridden initializeCharts if structured correctly,
+   * or this class might need to call initializeCharts explicitly after super.initialize.
+   * @param {Club[]} clubs - An array of Club objects.
+   * @param {Person[]} people - An array of Person objects.
+   */
   initialize(clubs, people) {
-    this.clubs = clubs;
-    this.people = people;
-    this.config = getCurrentConfig();
-    super.initialize(clubs, people);
+    console.log("TheoryChartVisualizer: Initializing...");
+    this.config = getCurrentConfig(); // Get latest config before anything else
+    // Call super.initialize, which sets up this.clubs, this.people, and basic chart structure via super.initializeCharts()
+    super.initialize(clubs, people); 
+    
+    // After super.initialize (which calls super.initializeCharts), 
+    // now call this class's initializeCharts to add theoretical lines.
+    // This ensures the chart object (this.chart) is created by the parent first.
+    this.initializeCharts(); 
+    this.updateLegendTitle();
   }
 
-  draw() {
-    if (!this.chart || !this.clubs) return;
-
-    try {
-      // Get current config and calculate equilibrium points
-      this.config = getCurrentConfig();
-      const equilibriumPoints = this.calculateEquilibriumPoints(this.config);
-      
-      console.log("Drawing equilibrium points:", equilibriumPoints);
-      
-      // Update chart data including equilibrium lines
-      const labels = this.clubData.get(this.clubs[0].id).labels;
-      this.chart.data.labels = labels;
-      
-      // Update club data
-      const clubDatasets = this.clubs.map((club) => ({
-        label: `Club ${club.id}`,
-        data: this.clubData.get(club.id).ratios,
-        borderColor: `hsl(${(club.id * 137.5) % 360}, 70%, 50%)`,
-        borderWidth: 1,
-        pointRadius: 1,
-        fill: false,
-      }));
-
-      // Update equilibrium lines - ensure they span across all turns
-      const equilibriumDatasets = equilibriumPoints.map(point => {
-        let label, color, borderDash, borderWidth;
-        
-        const formattedValue = (point.value * 100).toFixed(1);
-        
-        switch(point.type) {
-          case 'upper':
-            label = `Upper Equilibrium (${formattedValue}% B)`;
-            color = 'rgba(255, 0, 0, 0.8)';
-            borderDash = [5, 5];
-            borderWidth = 3;
-            break;
-          case 'lower':
-            label = `Lower Equilibrium (${formattedValue}% B)`;
-            color = 'rgba(0, 0, 255, 0.8)';
-            borderDash = [5, 5];
-            borderWidth = 3;
-            break;
-          case 'threshold':
-            label = `Threshold (${formattedValue}% B)`;
-            color = 'rgba(0, 255, 0, 0.8)';
-            borderDash = [10, 5];
-            borderWidth = 2;
-            break;
-          case 'population':
-            label = `Population Ratio (${formattedValue}% B)`;
-            color = 'rgba(128, 0, 128, 0.8)';
-            borderDash = [2, 2];
-            borderWidth = 2;
-            break;
-          default:
-            label = `${point.type.charAt(0).toUpperCase() + point.type.slice(1)} (${formattedValue}% B)`;
-            color = 'rgba(100, 100, 100, 0.7)';
-            borderDash = [5, 5];
-            borderWidth = 2;
-        }
-
-        // Create an array of the same value for each turn
-        const dataPoints = Array(labels.length).fill(point.value);
-
-        return {
-          label: label,
-          data: dataPoints,
-          borderColor: color,
-          borderWidth: borderWidth,
-          borderDash: borderDash,
-          pointRadius: 0,
-          fill: false,
-          // Make sure equilibrium lines are drawn on top
-          order: 0
-        };
-      });
-
-      // Combine datasets and update chart
-      const allDatasets = [...clubDatasets, ...equilibriumDatasets];
-      console.log("Chart datasets:", allDatasets);
-      
-      this.chart.data.datasets = allDatasets;
-      this.chart.update();
-    } catch (error) {
-      console.error("Error updating theory chart:", error);
+   /**
+   * Updates the legend title to indicate that it includes theoretical lines.
+   */
+  updateLegendTitle() {
+    if (this.chart && this.chart.options && this.chart.options.plugins && this.chart.options.plugins.legend) {
+      // This is a bit of a hack if Chart.js doesn't directly support a title *within* the legend box easily.
+      // A common approach is to have an external title for the chart or legend area.
+      // For now, we can modify the main chart title or log a message.
+      if (this.chart.options.plugins.title) {
+        this.chart.options.plugins.title.text = `Club Trait Proportions & Theoretical Equilibria`;
+      } else {
+        console.log("TheoryChartVisualizer: Legend includes theoretical lines.");
+      }
     }
+  }
+
+  /**
+   * Overrides the draw method to recalculate and redraw theoretical lines along with actual data.
+   * This ensures that if configuration changes, the theoretical lines adapt.
+   */
+  draw() {
+    if (!this.chart || !this.clubs || this.clubs.length === 0) {
+      // console.warn("TheoryChartVisualizer: Chart or data not ready for draw.");
+      return;
+    }
+    
+    // Call the super.draw() method to draw the actual club data lines.
+    // super.draw() calls this.chart.update(), so theory lines should be added *before* that, or chart updated again.
+    // A better pattern: super.updateData() prepares data, then this.draw() adds theory lines, then one chart.update().
+    // For now, let's ensure data is updated by parent first.
+    super.draw(); // This will update and draw club actuals.
+
+    // Now, re-calculate and add/update theoretical lines based on current config.
+    // This might cause a second chart update if super.draw() already updated.
+    // It's generally fine but less optimal than a single update.
+    this.config = getCurrentConfig(); // Get latest config, as it might have changed
+    
+    // The actual addition of theory lines and final chart update is handled by initializeCharts here,
+    // which is called by this.initialize, and also suitable for re-calculating lines. 
+    // If initializeCharts is too heavy (e.g. full chart recreation), a lighter update method for theory lines would be better.
+    this.initializeCharts(); // This recalculates equilibrium points and updates datasets
+
+    // No need to call this.chart.update() again if initializeCharts does it.
   }
 } 

@@ -1,132 +1,164 @@
 import { Visualizer } from "./Visualizer.js";
 
+/**
+ * @fileoverview Defines the CanvasVisualizer class for rendering the simulation on an HTML5 canvas.
+ */
+
+/**
+ * Visualizes the simulation using HTML5 Canvas to draw clubs and people.
+ * Extends the base Visualizer class.
+ */
 export class CanvasVisualizer extends Visualizer {
+  /**
+   * Constructs a CanvasVisualizer instance.
+   * @param {HTMLCanvasElement} canvas - The canvas element to draw on.
+   * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of the canvas.
+   * @param {number} width - The initial width of the canvas.
+   * @param {number} height - The initial height of the canvas.
+   */
   constructor(canvas, ctx, width, height) {
     super(canvas, ctx, width, height);
     this.clubs = [];
     this.people = [];
-    this.clubPositions = new Map(); // Store club coordinates
-    this.personPositions = new Map(); // Store person positions for each club
+    this.clubPositions = new Map(); // Stores calculated screen coordinates {x, y} for each club by club.id
+    this.personPositions = new Map(); // Stores individual person's visual data {angle, radius} within each club
+                                    // Map<person.id, Map<club.id, {angle, radius}>>
+    this.clubRadius = 50; // Default club radius, will be recalculated based on canvas size and club count
   }
 
+  /**
+   * Initializes the CanvasVisualizer with clubs and people data.
+   * Calculates positions for clubs in a grid layout and initial random positions for people within clubs.
+   * @param {Club[]} clubs - An array of Club objects.
+   * @param {Person[]} people - An array of Person objects.
+   */
   initialize(clubs, people) {
     this.clubs = clubs;
     this.people = people;
-    this.clubPositions = new Map();
-    this.personPositions = new Map();
+    this.clubPositions.clear();
+    this.personPositions.clear();
 
-    // Update canvas size first
-    this.updateCanvasSize();
+    this.updateCanvasSize(); // Ensure canvas dimensions and DPI scaling are up-to-date
 
-    // Calculate optimal grid layout
+    if (clubs.length === 0) {
+        this.draw(); // Draw an empty state if no clubs
+        return;
+    }
+
+    // --- Calculate optimal grid layout for clubs ---
     const aspectRatio = this.width / this.height;
     const totalClubs = clubs.length;
-
-    // Calculate optimal number of columns based on aspect ratio
     let numColumns = Math.ceil(Math.sqrt(totalClubs * aspectRatio));
     let numRows = Math.ceil(totalClubs / numColumns);
 
-    // Adjust columns if too many rows
-    if (numRows > numColumns * 1.5) {
+    // Adjust columns/rows for better aesthetics (e.g., avoid very tall/wide grids)
+    if (numRows > numColumns * 1.5 && numColumns < totalClubs) { // Check numColumns < totalClubs to avoid infinite loop if totalClubs is 1
       numColumns++;
       numRows = Math.ceil(totalClubs / numColumns);
     }
 
-    // Calculate optimal club size and padding
-    const minPadding = Math.min(this.width, this.height) * 0.05;
-    const maxClubWidth = (this.width - minPadding * 2) / numColumns;
-    const maxClubHeight = (this.height - minPadding * 2) / numRows;
+    const minPaddingOverall = Math.min(this.width, this.height) * 0.05; // Minimum 5% padding on smaller dimension
+    // Calculate cell dimensions for each club
+    const cellWidth = (this.width - minPaddingOverall * 2) / numColumns;
+    const cellHeight = (this.height - minPaddingOverall * 2) / numRows;
 
-    // Set club radius based on available space
-    this.clubRadius = Math.min(maxClubWidth, maxClubHeight) * 0.3;
+    // Determine club radius based on the smaller of cell width/height, reserving space for labels/stats
+    this.clubRadius = Math.min(cellWidth, cellHeight) * 0.35; // Use 35% of the smaller cell dimension for radius
 
-    // Calculate actual padding to center the grid
-    const horizontalPadding = (this.width - maxClubWidth * numColumns) / 2;
-    const verticalPadding = (this.height - maxClubHeight * numRows) / 2;
+    // Calculate actual horizontal and vertical padding to center the grid of clubs
+    const contentWidth = cellWidth * numColumns;
+    const contentHeight = cellHeight * numRows;
+    const horizontalPadding = (this.width - contentWidth) / 2 + minPaddingOverall;
+    const verticalPadding = (this.height - contentHeight) / 2 + minPaddingOverall;
 
-    // Position clubs in grid
+    // Position each club within its grid cell
     clubs.forEach((club, i) => {
       const row = Math.floor(i / numColumns);
       const col = i % numColumns;
-
       this.clubPositions.set(club.id, {
-        x: horizontalPadding + maxClubWidth * (0.5 + col),
-        y: verticalPadding + maxClubHeight * (0.5 + row),
+        x: horizontalPadding + cellWidth * col + cellWidth / 2,
+        y: verticalPadding + cellHeight * row + cellHeight / 2,
       });
     });
 
-    // Initialize positions for all people for all clubs
+    // Initialize visual positions for all people (even if not in a club yet, for consistency)
+    // This map helps in quickly finding a person's specific {angle, radius} for a club they are in.
     people.forEach((person) => {
-      if (!this.personPositions.has(person.id)) {
-        this.personPositions.set(person.id, new Map());
-      }
-      const personClubPositions = this.personPositions.get(person.id);
-
+      const personClubVisuals = new Map();
       clubs.forEach((club) => {
-        if (!personClubPositions.has(club.id)) {
-          const angle = Math.random() * Math.PI * 2;
-          const minRadius = this.clubRadius * 0.1;
-          const maxRadius = this.clubRadius * 0.85;
-          const radius = minRadius + Math.random() * (maxRadius - minRadius);
-          personClubPositions.set(club.id, { angle, radius });
-        }
+        // Store the pre-calculated angle from Person model if available, or generate one
+        const existingPosition = person.positions.get(club.id);
+        const angle = existingPosition ? existingPosition.angle : Math.random() * Math.PI * 2;
+        // Generate a random radius within the club for visual placement
+        const minPersonRadius = this.clubRadius * 0.1; // Person dots start near the center
+        const maxPersonRadius = this.clubRadius * 0.85; // Keep dots within the club circle boundary
+        const radius = minPersonRadius + Math.random() * (maxPersonRadius - minPersonRadius);
+        personClubVisuals.set(club.id, { angle, radius });
       });
+      this.personPositions.set(person.id, personClubVisuals);
     });
 
-    // Ensure canvas is visible
-    this.canvas.style.display = "block";
-    
-    // Draw initial state
-    this.draw();
+    this.canvas.style.display = "block"; // Ensure canvas is visible
+    this.draw(); // Perform an initial draw
   }
 
+  /**
+   * Handles canvas resizing, including DPI scaling for crisp rendering.
+   * Updates internal width/height and scales the rendering context.
+   */
   updateCanvasSize() {
-    // Get the wrapper dimensions
     const wrapper = this.canvas.parentElement;
+    if (!wrapper) {
+        console.warn("CanvasVisualizer: Parent wrapper not found for sizing.");
+        return;
+    }
     const rect = wrapper.getBoundingClientRect();
 
-    // Set canvas size with proper DPI scaling
     const dpr = window.devicePixelRatio || 1;
     const displayWidth = rect.width;
     const displayHeight = rect.height;
 
-    // Set the canvas dimensions accounting for DPI
     this.canvas.width = displayWidth * dpr;
     this.canvas.height = displayHeight * dpr;
-
-    // Set display size
     this.canvas.style.width = `${displayWidth}px`;
     this.canvas.style.height = `${displayHeight}px`;
 
-    // Scale context and reset transform
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform before scaling
     this.ctx.scale(dpr, dpr);
 
-    // Update internal dimensions
+    // Update internal dimensions used for drawing logic
     this.width = displayWidth;
     this.height = displayHeight;
     this.minDimension = Math.min(this.width, this.height);
   }
 
+  /**
+   * Main drawing method. Clears the canvas and redraws all clubs and their members.
+   * Also updates the legend.
+   */
   draw() {
-    if (!this.ctx || !this.clubs || !this.people) {
-      console.error("Cannot draw: missing context or data");
+    if (!this.ctx) {
+      console.error("CanvasVisualizer: Canvas context is not available for drawing.");
       return;
     }
-
-    // Clear the canvas
+    // Clear the entire canvas
     this.ctx.clearRect(0, 0, this.width, this.height);
+
+    if (!this.clubs || !this.people) {
+      // console.warn("CanvasVisualizer: Clubs or people data not available for drawing.");
+      return; // Don't draw if data isn't ready
+    }
 
     // Draw each club
     this.clubs.forEach((club) => {
       try {
         this.drawClub(club);
       } catch (error) {
-        console.error("Error drawing club:", club.id, error);
+        console.error(`Error drawing club ${club.id}:`, error);
       }
     });
 
-    // Update trait counts for legend
+    // Update trait counts for the legend
     const traitCounts = {
       R: this.people.filter((person) => person.trait === "R").length,
       B: this.people.filter((person) => person.trait === "B").length,
@@ -134,188 +166,171 @@ export class CanvasVisualizer extends Visualizer {
     this.updateLegend(traitCounts);
   }
 
+  /**
+   * Draws a single club, including its circle, statistics bar, label, and members.
+   * @param {Club} club - The club to draw.
+   */
   drawClub(club) {
     const pos = this.clubPositions.get(club.id);
-    if (!pos) return;
+    if (!pos) return; // Club position not calculated, cannot draw
 
     this.ctx.save();
-    // Transform to club's coordinate system
-    this.ctx.translate(pos.x, pos.y);
+    this.ctx.translate(pos.x, pos.y); // Move origin to club's center for easier drawing
 
-    // Draw club circle (now centered at 0,0)
+    // Draw club circle
     this.ctx.beginPath();
     this.ctx.arc(0, 0, this.clubRadius, 0, Math.PI * 2);
-    this.ctx.strokeStyle = "#ccc";
-    this.ctx.lineWidth = this.minDimension * 0.002;
+    this.ctx.strokeStyle = "#ccc"; // Light grey border for the club circle
+    this.ctx.lineWidth = Math.max(1, this.minDimension * 0.002); // Responsive line width
     this.ctx.fillStyle = "white";
     this.ctx.fill();
     this.ctx.stroke();
 
-    // Draw stats bar and labels - position everything above the circle with proper spacing
-    const barWidth = this.clubRadius * 0.75;
-    const barHeight = this.clubRadius * 0.2; // Reduced height
-    const statsSpacing = this.clubRadius * 0.3; // Space between elements
-    const barY = -this.clubRadius - statsSpacing; // Position bar above circle with spacing
-
-    const rCount = club.getTraitCount("R");
-    const bCount = club.getTraitCount("B");
-    const total = club.getMemberCount();
+    // Draw club statistics bar (R/B ratio) and member counts above the circle
+    const barWidth = this.clubRadius * 1.5; // Make bar wider than club for text
+    const barHeight = this.clubRadius * 0.2; 
+    const statsYOffset = -this.clubRadius - (barHeight * 1.5); // Position above the circle
 
     this.drawClubStats(
-      0, // x is now relative to club center
-      barY,
+      0, // Centered horizontally relative to club center
+      statsYOffset,
       barWidth,
       barHeight,
-      rCount,
-      bCount,
-      total,
-      statsSpacing
+      club.getTraitCount("R"),
+      club.getTraitCount("B"),
+      club.getMemberCount(),
+      barHeight * 0.5 // Spacing factor for labels within stats area
     );
 
-    // Draw club label below the circle
-    const fontSize = Math.max(12, Math.floor(this.minDimension * 0.012));
-    this.ctx.font = `${fontSize}px Arial`;
+    // Draw club ID label below the circle
+    const fontSize = Math.max(10, Math.floor(this.minDimension * 0.015)); // Responsive font size
+    this.ctx.font = `bold ${fontSize}px Arial`;
     this.ctx.fillStyle = "black";
     this.ctx.textAlign = "center";
-    this.ctx.fillText(`Club ${club.id}`, 0, this.clubRadius * 1.25);
+    this.ctx.fillText(`Club ${club.id}`, 0, this.clubRadius + fontSize * 1.5); // Positioned below the circle
 
-    // Draw club members
+    // Draw members of this club
     club.members.forEach((person) => {
       this.drawMember(club, person);
     });
 
-    this.ctx.restore();
+    this.ctx.restore(); // Restore original canvas state
   }
 
+  /**
+   * Draws a single member (person) within a club as a colored dot.
+   * @param {Club} club - The club the member belongs to.
+   * @param {Person} person - The person (member) to draw.
+   */
   drawMember(club, person) {
-    const personPositions = this.personPositions.get(person.id);
-    if (!personPositions) return;
+    const personClubVisuals = this.personPositions.get(person.id);
+    if (!personClubVisuals) return; 
 
-    const personPos = personPositions.get(club.id);
-    if (!personPos) return;
+    const visualInfo = personClubVisuals.get(club.id);
+    if (!visualInfo) return;
 
-    const x = Math.cos(personPos.angle) * personPos.radius;
-    const y = Math.sin(personPos.angle) * personPos.radius;
+    // Calculate x, y relative to club center using stored angle and radius
+    const x = Math.cos(visualInfo.angle) * visualInfo.radius;
+    const y = Math.sin(visualInfo.angle) * visualInfo.radius;
+    const dotRadius = Math.max(2, this.minDimension * 0.008); // Responsive dot size
 
-    // Draw person dot
     this.ctx.beginPath();
-    this.ctx.arc(x, y, this.minDimension * 0.008, 0, Math.PI * 2);
-    this.ctx.fillStyle = person.trait === "R" ? "#e91e63" : "#2196f3";
+    this.ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+    this.ctx.fillStyle = person.trait === "R" ? "#E91E63" : "#2196F3"; // R: Pink/Red, B: Blue
     this.ctx.fill();
-    this.ctx.strokeStyle = "white";
-    this.ctx.lineWidth = this.minDimension * 0.001;
+    this.ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"; // Semi-transparent white outline for better visibility
+    this.ctx.lineWidth = Math.max(0.5, this.minDimension * 0.001);
     this.ctx.stroke();
   }
 
-  drawClubStats(x, y, barWidth, barHeight, rCount, bCount, total, spacing) {
-    const barX = x - barWidth / 2;
+  /**
+   * Draws the statistics bar for a club, showing trait proportions and counts.
+   * @param {number} x - Center X position for the stats display (relative to club center).
+   * @param {number} y - Top Y position for the stats display (relative to club center).
+   * @param {number} barWidth - The total width of the stats bar.
+   * @param {number} barHeight - The height of the stats bar.
+   * @param {number} rCount - Count of trait R members.
+   * @param {number} bCount - Count of trait B members.
+   * @param {number} total - Total members in the club.
+   * @param {number} labelSpacing - Spacing factor for positioning labels around the bar.
+   */
+  drawClubStats(x, y, barWidth, barHeight, rCount, bCount, total, labelSpacing) {
+    const barX = x - barWidth / 2; // Left edge of the bar
+    const fontSize = Math.max(8, Math.floor(this.minDimension * 0.012));
+    this.ctx.font = `${fontSize}px Arial`;
 
-    // Draw ratio and member count above the bar with proper spacing
-    const ratio = total > 0 ? (rCount / bCount).toFixed(2) : "N/A";
-    this.drawInfoLabel(`R/B: ${ratio}`, x, y - spacing * 1.2, barHeight);
-    this.drawInfoLabel(`Members: ${total}`, x, y - spacing * 0.6, barHeight);
+    // Draw R/B ratio and total member count labels above the bar
+    const rToBRatio = (bCount > 0) ? (rCount / bCount).toFixed(2) : (rCount > 0 ? "∞" : "N/A");
+    this.drawInfoLabel(`R/B: ${rToBRatio}`, x, y - labelSpacing * 2.5, fontSize);
+    this.drawInfoLabel(`Members: ${total}`, x, y - labelSpacing * 1, fontSize);
 
-    // Background bar
+    // Draw background for the bar
     this.ctx.fillStyle = "#f0f0f0";
     this.ctx.fillRect(barX, y, barWidth, barHeight);
+    this.ctx.strokeStyle = "#ccc";
+    this.ctx.lineWidth = 0.5;
+    this.ctx.strokeRect(barX, y, barWidth, barHeight);
 
-    // Trait bars
+    // Draw trait proportion bars (R and B)
     if (total > 0) {
-      this.ctx.fillStyle = "#e91e63";
       const rWidth = (rCount / total) * barWidth;
+      this.ctx.fillStyle = "#E91E63"; // R: Pink/Red
       this.ctx.fillRect(barX, y, rWidth, barHeight);
 
-      this.ctx.fillStyle = "#2196f3";
       const bWidth = (bCount / total) * barWidth;
+      this.ctx.fillStyle = "#2196F3"; // B: Blue
       this.ctx.fillRect(barX + rWidth, y, bWidth, barHeight);
     }
 
-    const padding = this.minDimension * 0.005;
-    const countHeight = this.minDimension * 0.015;
-
-    // Draw counts and labels
+    // Draw R and B counts on sides of the bar
+    const textPadding = fontSize * 0.5;
     this.drawCountLabel(
-      rCount,
-      barX - padding,
-      y,
-      countHeight,
-      "#e91e63",
+      rCount.toString(),
+      barX - textPadding,
+      y + barHeight / 2,
+      fontSize,
+      "#E91E63", // R: Pink/Red
       "right"
     );
     this.drawCountLabel(
-      bCount,
-      barX + barWidth + padding,
-      y,
-      countHeight,
-      "#2196f3",
+      bCount.toString(),
+      barX + barWidth + textPadding,
+      y + barHeight / 2,
+      fontSize,
+      "#2196F3", // B: Blue
       "left"
     );
   }
 
-  drawPerson(person) {
-    console.log("Drawing person:", person);
-    const personPositions = this.personPositions.get(person.id);
-    console.log("Person positions:", personPositions);
-    if (!personPositions) return;
-
-    person.clubs.forEach((club) => {
-      const clubPos = this.clubPositions.get(club.id);
-      const personPos = personPositions.get(club.id);
-      console.log(
-        "Club position:",
-        clubPos,
-        "Person position in club:",
-        personPos
-      );
-      if (!clubPos || !personPos) return;
-
-      const x = clubPos.x + Math.cos(personPos.angle) * personPos.radius;
-      const y = clubPos.y + Math.sin(personPos.angle) * personPos.radius;
-
-      // Draw person dot with improved visibility
-      this.ctx.beginPath();
-      this.ctx.arc(x, y, this.minDimension * 0.008, 0, Math.PI * 2);
-      this.ctx.fillStyle = person.trait === "R" ? "#e91e63" : "#2196f3";
-      this.ctx.fill();
-      this.ctx.strokeStyle = "white";
-      this.ctx.lineWidth = this.minDimension * 0.001;
-      this.ctx.stroke();
-    });
-  }
-
-  drawCountLabel(count, x, y, height, color, align) {
-    const text = count.toString();
-    const metrics = this.ctx.measureText(text);
-    const padding = height * 0.3;
-
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-    const bgX = align === "right" ? x - metrics.width - padding * 2 : x;
-    this.ctx.fillRect(
-      bgX,
-      y + height / 2 - height / 2,
-      metrics.width + padding * 2,
-      height
-    );
-
-    this.ctx.textAlign = align;
+  /**
+   * Helper to draw a text label for counts (e.g., R or B count next to stats bar).
+   * @param {string} text - The text to draw (count).
+   * @param {number} x - X position for the text.
+   * @param {number} y - Y position for the text (baseline).
+   * @param {number} fontSize - The font size.
+   * @param {string} color - Text color.
+   * @param {string} align - Text alignment ("left", "right", "center").
+   */
+  drawCountLabel(text, x, y, fontSize, color, align) {
+    this.ctx.font = `bold ${fontSize}px Arial`;
     this.ctx.fillStyle = color;
-    this.ctx.fillText(text, x, y + height / 2 + height / 3);
+    this.ctx.textAlign = align;
+    this.ctx.textBaseline = "middle";
+    this.ctx.fillText(text, x, y);
   }
 
-  drawInfoLabel(text, x, y, height) {
-    const metrics = this.ctx.measureText(text);
-    const padding = height * 0.3;
-
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-    this.ctx.fillRect(
-      x - metrics.width / 2 - padding,
-      y - height / 2,
-      metrics.width + padding * 2,
-      height
-    );
-
-    this.ctx.textAlign = "center";
+  /**
+   * Helper to draw an informational text label (e.g., "R/B Ratio", "Members").
+   * @param {string} text - The text to draw.
+   * @param {number} x - Center X position for the text.
+   * @param {number} y - Y position for the text (baseline).
+   * @param {number} fontSize - The font size.
+   */
+  drawInfoLabel(text, x, y, fontSize) {
+    this.ctx.font = `${fontSize}px Arial`;
     this.ctx.fillStyle = "black";
-    this.ctx.fillText(text, x, y + height / 3);
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
+    this.ctx.fillText(text, x, y);
   }
 }
