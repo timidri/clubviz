@@ -147,6 +147,40 @@ export class Tester {
   }
 
   /**
+   * Logs edge creation attempt for Schelling model.
+   * @param {Person} person - The person creating an edge.
+   * @param {Group} group - The group involved.
+   * @param {number} rate - The creation rate used.
+   */
+  logEdgeCreation(person, group, rate) {
+    if (!this.debugMode) return;
+    console.log(`📝 Edge creation: Person ${person.id} (opinion ${person.getOpinion()}) → Group ${group.id}, rate: ${rate.toFixed(4)}`);
+  }
+
+  /**
+   * Logs edge deletion attempt for Schelling model.
+   * @param {Person} person - The person deleting an edge.
+   * @param {Group} group - The group involved.
+   * @param {number} rate - The deletion rate used.
+   */
+  logEdgeDeletion(person, group, rate) {
+    if (!this.debugMode) return;
+    console.log(`📝 Edge deletion: Person ${person.id} (opinion ${person.getOpinion()}) → Group ${group.id}, rate: ${rate.toFixed(4)}`);
+  }
+
+  /**
+   * Logs opinion change attempt for Voter model.
+   * @param {Person} person - The person changing opinion.
+   * @param {number} oldOpinion - Previous opinion.
+   * @param {number} newOpinion - New opinion.
+   * @param {number} influence - Influence value that caused change.
+   */
+  logOpinionChange(person, oldOpinion, newOpinion, influence) {
+    if (!this.debugMode) return;
+    console.log(`📝 Opinion change: Person ${person.id} ${oldOpinion} → ${newOpinion}, influence: ${influence.toFixed(4)}`);
+  }
+
+  /**
    * Enables or disables verbose debug logging for decisions.
    * @param {boolean} enabled - True to enable debug mode, false to disable.
    */

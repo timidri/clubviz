@@ -3,166 +3,208 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Club Membership Visualization</title>
+    <title>Random Intersection Graph: Schelling & Voter Models</title>
     <link rel="stylesheet" href="styles/main.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.21.2/cytoscape.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   </head>
   <body>
-    <div class="container">
-      <header>
-        <h1>Club Membership Visualization</h1>
-
-        <div id="parameters" class="parameter-panel">
-          <div class="parameter-columns">
-            <!-- Left Column: Basic Parameters -->
-            <div class="parameter-column">
-              <div class="parameter-group">
-                <label for="totalPeople">Number of People (N):</label>
-                <input type="number" id="totalPeople" min="1" value="100" />
-                <div class="note">Total population size</div>
-              </div>
-
-              <div class="parameter-group">
-                <label for="traitRatio">Initial Trait R Proportion:</label>
-                <input
-                  type="range"
-                  id="traitRatio"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value="0.5"
-                />
-                <span id="traitRatioValue">50%</span>
-                <div class="note">Proportion of population with Trait R</div>
-              </div>
-
-              <div class="parameter-group">
-                <label for="totalClubs">Number of Clubs:</label>
-                <input type="number" id="totalClubs" min="1" value="3" />
-                <div class="note">(This value represents C in formulas)</div>
-              </div>
-            </div>
-
-            <!-- Right Column: Probability Parameters -->
-            <div class="parameter-column">
-              <div class="parameter-group">
-                <label for="joinProbability">Join Probability (k):</label>
-                <input
-                  type="number"
-                  id="joinProbability"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value="1"
-                />
-                <div class="formula">P(join) = k/C</div>
-                <div class="note">Probability of joining any club per turn</div>
-              </div>
-
-              <div class="parameter-group">
-                <label for="leaveProbabilityThreshold"
-                  >Leave Threshold (t):</label
-                >
-                <input
-                  type="number"
-                  id="leaveProbabilityThreshold"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value="0.5"
-                />
-                <div class="formula">
-                  P(leave) = p_high if trait proportion < t, else p_low
-                </div>
-                <div class="note">
-                  Members leave based on trait representation
-                </div>
-              </div>
-
-              <div class="parameter-group">
-                <label for="leaveHighProb"
-                  >High Leave Probability (p_high):</label
-                >
-                <input
-                  type="number"
-                  id="leaveHighProb"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value="0.9"
-                />
-                <div class="note">
-                  Probability of leaving when trait is underrepresented
-                </div>
-              </div>
-
-              <div class="parameter-group">
-                <label for="leaveLowProb">Low Leave Probability (p_low):</label>
-                <input
-                  type="number"
-                  id="leaveLowProb"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value="0.1"
-                />
-                <div class="note">
-                  Probability of leaving when trait is well-represented
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <button id="applyParams" class="control-btn">Apply Parameters</button>
-        </div>
-
-        <div id="controls" class="control-panel">
-          <div class="simulation-controls">
-            <button id="step1" class="control-btn">1 Turn</button>
-            <button id="step10" class="control-btn">10 Turns</button>
-            <button id="step100" class="control-btn">100 Turns</button>
-          </div>
-          <div class="turn-counter">Turn: <span id="turnCounter">0</span></div>
-          <div class="run-controls">
-            <button id="startRun" class="control-btn primary">Start Run</button>
-            <button id="stopRun" class="control-btn danger">Stop</button>
-            <button id="toggleTesting" class="control-btn">Testing: Off</button>
-            <select id="visualizerSelect" class="control-btn">
-              <option value="canvas">Canvas View</option>
-              <option value="graph">Graph View</option>
-              <option value="chart">Chart View</option>
-              <option value="theory">Theory Chart View</option>
-            </select>
-          </div>
-        </div>
+    <div class="app-container">
+      <!-- Header -->
+      <header class="app-header">
+        <h1>Random Intersection Graph Simulation</h1>
+        <p class="subtitle">Schelling and Voter Model Dynamics</p>
       </header>
 
-      <main>
-        <div id="visualization-container">
-          <div class="visualization-wrapper">
-            <canvas id="visualization"></canvas>
-          </div>
-          <div id="stats"></div>
-        </div>
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Control Panel -->
+        <aside class="control-panel">
+          <section class="model-selection-section">
+            <h3>Model Selection</h3>
+            <div id="modelSelection" class="model-selection">
+              <!-- Model radio buttons will be added by JavaScript -->
+            </div>
+          </section>
 
-        <div id="legend" class="legend-panel">
-          <h3>Legend</h3>
-          <div class="legend-item">
-            <span class="color-dot trait-R"></span>
-            <span class="legend-label"
-              >Trait R <span class="trait-count">0</span></span
-            >
+          <section class="parameters-section">
+            <h3>Parameters</h3>
+            <div class="parameters">
+              <!-- Graph Structure -->
+              <div class="parameter-group">
+                <h4>Graph Structure</h4>
+                <label for="n">Number of people (n):</label>
+                <input type="number" id="n" class="parameter-input" min="10" max="1000" value="100" />
+                
+                <label for="m">Number of groups (m):</label>
+                <input type="number" id="m" class="parameter-input" min="1" max="100" value="10" />
+                
+                <label for="lambda">Connectivity (λ):</label>
+                <input type="number" id="lambda" class="parameter-input" min="0.1" max="10" step="0.1" value="1.0" />
+              </div>
+
+              <!-- Schelling Model Parameters -->
+              <div class="parameter-group schelling-params">
+                <h4>Schelling Model</h4>
+                <label for="c">Edge creation rate (c):</label>
+                <input type="number" id="c" class="parameter-input" min="0.1" max="10" step="0.1" value="1.0" />
+                
+                <label for="gFunction">G-function type:</label>
+                <select id="gFunction" class="parameter-input">
+                  <option value="linear">Linear</option>
+                  <option value="sigmoid">Sigmoid</option>
+                  <option value="threshold">Threshold</option>
+                </select>
+                
+                <label for="gSteepness">G-function steepness:</label>
+                <input type="number" id="gSteepness" class="parameter-input" min="0.1" max="10" step="0.1" value="2.0" />
+              </div>
+
+              <!-- Voter Model Parameters -->
+              <div class="parameter-group voter-params">
+                <h4>Voter Model</h4>
+                <label for="gamma">Opinion change rate (γ):</label>
+                <input type="number" id="gamma" class="parameter-input" min="0" max="1" step="0.01" value="0.1" />
+                
+                <label for="voterType">Voter type:</label>
+                <select id="voterType" class="parameter-input">
+                  <option value="group">Group-based</option>
+                  <option value="individual">Individual-based</option>
+                </select>
+              </div>
+
+              <!-- Initial Conditions -->
+              <div class="parameter-group">
+                <h4>Initial Conditions</h4>
+                <label for="initialOpinionSplit">Initial +1 opinion ratio:</label>
+                <input type="number" id="initialOpinionSplit" class="parameter-input" min="0" max="1" step="0.01" value="0.5" />
+                
+                <label for="initialGroupWeights">Group weight distribution:</label>
+                <select id="initialGroupWeights" class="parameter-input">
+                  <option value="uniform">Uniform</option>
+                  <option value="exponential">Exponential</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="parameter-actions">
+              <button id="applyParams" class="btn btn-primary">Apply Parameters</button>
+              <div id="parameterErrors" class="error-messages"></div>
+            </div>
+          </section>
+
+          <section class="simulation-controls">
+            <h3>Simulation Control</h3>
+            <div class="controls">
+              <div class="turn-controls">
+                <button id="takeTurn" class="btn btn-secondary">1 Turn</button>
+                <button id="take10Turns" class="btn btn-secondary">10 Turns</button>
+                <button id="take100Turns" class="btn btn-secondary">100 Turns</button>
+              </div>
+              
+              <div class="run-controls">
+                <button id="startRun" class="btn btn-success">Start Run</button>
+                <button id="stopRun" class="btn btn-danger" disabled>Stop Run</button>
+              </div>
+              
+              <div class="reset-controls">
+                <button id="resetSim" class="btn btn-warning">Reset</button>
+              </div>
+            </div>
+            
+            <div class="simulation-status">
+              <div id="turnCounter" class="turn-counter">Turn: 0</div>
+              <div id="parameterDisplay" class="parameter-display"></div>
+            </div>
+          </section>
+
+          <section class="visualization-controls">
+            <h3>Visualization</h3>
+            <div class="visualizer-selection">
+              <label for="visualizerSelect">Visualizer:</label>
+              <select id="visualizerSelect" class="parameter-input">
+                <option value="canvas">Canvas (Groups)</option>
+                <option value="graph">Network Graph</option>
+                <option value="chart">Time Series</option>
+              </select>
+            </div>
+          </section>
+
+          <section class="legend-section">
+            <h3>Legend</h3>
+            <div class="legend">
+              <div class="legend-item">
+                <span class="legend-dot opinion-positive"></span>
+                <span>Opinion +1</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot opinion-negative"></span>
+                <span>Opinion -1</span>
+              </div>
+            </div>
+          </section>
+        </aside>
+
+        <!-- Visualization Area -->
+        <main class="visualization-area">
+          <div class="visualization-wrapper">
+            <canvas id="visualization" width="800" height="600"></canvas>
+            <div id="graphContainer" style="display: none; width: 100%; height: 100%;"></div>
+            <div id="chartContainer" style="display: none; width: 100%; height: 100%;">
+              <canvas id="chartCanvas"></canvas>
+            </div>
           </div>
-          <div class="legend-item">
-            <span class="color-dot trait-B"></span>
-            <span class="legend-label"
-              >Trait B <span class="trait-count">0</span></span
-            >
+          
+          <div class="visualization-info">
+            <div id="simulationStats" class="stats-panel">
+              <h4>Statistics</h4>
+              <div id="statsContent">
+                <div class="stat-item">
+                  <span class="stat-label">Total Edges:</span>
+                  <span id="totalEdges" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Opinion +1:</span>
+                  <span id="opinionPositive" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Opinion -1:</span>
+                  <span id="opinionNegative" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Segregation Index:</span>
+                  <span id="segregationIndex" class="stat-value">0.000</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Convergence:</span>
+                  <span id="convergenceMetric" class="stat-value">0.000</span>
+                </div>
+              </div>
+            </div>
           </div>
+        </main>
+      </div>
+
+      <!-- Footer -->
+      <footer class="app-footer">
+        <p>Based on "Schelling and Voter Model on Random Intersection Graph" research</p>
+        <div class="model-info">
+          <strong>Current Model:</strong> 
+          <span id="currentModelDisplay">Schelling Only</span>
         </div>
-      </main>
+      </footer>
     </div>
+
+    <!-- Error/Message Display -->
+    <div id="messageOverlay" class="message-overlay" style="display: none;">
+      <div class="message-content">
+        <h3 id="messageTitle">Message</h3>
+        <p id="messageText"></p>
+        <button id="messageClose" class="btn btn-primary">Close</button>
+      </div>
+    </div>
+
+    <!-- Scripts -->
     <script type="module" src="js/main.js"></script>
   </body>
 </html>

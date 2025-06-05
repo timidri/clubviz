@@ -1,448 +1,541 @@
-import { Tester } from "../simulation/Tester.js";
-import { Simulator } from "../simulation/Simulator.js";
-import { getCurrentConfig } from "../config.js";
-import { Club } from "../models/Club.js";
-import { Person } from "../models/Person.js";
-import { CanvasVisualizer } from "./CanvasVisualizer.js";
-import { GraphVisualizer } from "./GraphVisualizer.js";
-import { ChartVisualizer } from "./ChartVisualizer.js";
-import { TheoryChartVisualizer } from "./TheoryChartVisualizer.js";
-
 /**
- * @fileoverview Defines the Dashboard class, the main controller for the UI and simulation.
+ * @fileoverview Dashboard class for controlling the Random Intersection Graph simulation.
+ * Provides UI controls for model selection and parameter adjustment.
+ * Based on "Schelling and Voter Model on Random Intersection Graph" paper.
  */
 
+import { getCurrentConfig, validateConfig, MODEL_TYPES } from "../config.js";
+import { GraphInitializer } from "../simulation/GraphInitializer.js";
+import { Simulator } from "../simulation/Simulator.js";
+import { Tester } from "../simulation/Tester.js";
+import { CanvasVisualizer } from "./CanvasVisualizer.js";
+
 /**
- * Manages the overall application, including UI elements, parameter handling,
- * simulation control, and switching between different visualizers.
+ * Main dashboard controller for the Random Intersection Graph simulation.
+ * Manages UI, simulation, visualization, and user interactions.
  */
 export class Dashboard {
   /**
-   * Initializes the Dashboard, sets up UI elements, binds controls, and starts the visualizer.
+   * Creates a new Dashboard instance and initializes the UI.
    */
   constructor() {
-    // Core canvas and rendering context
-    this.canvas = document.getElementById("visualization");
-    this.ctx = this.canvas.getContext("2d");
+    console.log("Dashboard initializing...");
     
-    // UI Panels
-    this.statsPanel = document.getElementById("stats");
-    
-    this.currentTurn = 0; // Tracks the current turn number of the simulation
-
-    // Initial canvas dimensions from its parent wrapper
-    const wrapper = this.canvas.parentElement;
-    if (!wrapper) {
-      console.error("Canvas wrapper not found!");
-      this.width = 600; // Default width
-      this.height = 400; // Default height
-    } else {
-      const rect = wrapper.getBoundingClientRect();
-      this.width = rect.width;
-      this.height = rect.height;
-    }
-
-    // Simulation and data storage
-    this.clubs = [];
-    this.people = [];
+    // Core components
+    this.config = getCurrentConfig();
+    this.graphInitializer = null;
     this.simulator = null;
-    
-    // Testing and debugging
-    this.testingEnabled = false;
     this.tester = null;
-
-    // Initialize with the default visualizer (CanvasVisualizer)
-    this.visualizer = new CanvasVisualizer(
-      this.canvas,
-      this.ctx,
-      this.width,
-      this.height
-    );
     
-    this.bindControls(); // Attach event listeners to UI controls
-    this.applyParameters(); // Apply initial parameters and set up the simulation
+    // Data
+    this.people = [];
+    this.groups = [];
+    
+    // Visualizer
+    this.canvas = document.getElementById("visualization");
+    this.ctx = this.canvas ? this.canvas.getContext("2d") : null;
+    this.visualizer = null;
+    
+    // UI state
+    this.isRunning = false;
+    this.runInterval = null;
+    this.currentTurn = 0;
+    
+    // Initialize step by step
+    try {
+      this.initializeUI();
+      this.applyParameters(); // This will create the initial graph and visualization
+      console.log("Dashboard initialized successfully");
+    } catch (error) {
+      console.error("Dashboard initialization failed:", error);
+      this.showError("Failed to initialize dashboard: " + error.message);
+    }
   }
 
   /**
-   * Updates the main canvas dimensions and the visualizer's dimensions.
-   * Called on initialization and when toggling testing (which might affect layout).
+   * Initializes the user interface elements and event handlers.
    */
-  updateCanvasSize() {
-    const wrapper = this.canvas.parentElement;
-    if (!wrapper) return; // Should not happen if constructor check passed
+  initializeUI() {
+    console.log("Setting up UI controls...");
     
-    const rect = wrapper.getBoundingClientRect();
-    this.width = rect.width;
-    this.height = rect.height;
+    // Setup model selection
+    this.setupModelSelection();
+    
+    // Setup simulation controls
+    this.setupSimulationControls();
+    
+    // Setup parameter change listeners
+    this.setupParameterListeners();
+    
+    // Initial parameter display update
+    this.updateParameterDisplay();
+    
+    console.log("UI controls set up successfully");
+  }
 
-    if (this.visualizer) {
-      this.visualizer.updateDimensions(this.width, this.height);
-      // If data exists, reinitialize the visualizer with new dimensions
-      if (this.clubs.length > 0 && this.people.length > 0) {
-        this.visualizer.initialize(this.clubs, this.people);
+  /**
+   * Sets up model selection controls.
+   */
+  setupModelSelection() {
+    const modelContainer = document.getElementById('modelSelection');
+    if (!modelContainer) {
+      console.warn("Model selection container not found");
+      return;
+    }
+    
+    // Clear existing content
+    modelContainer.innerHTML = '';
+    
+    // Create radio buttons for model selection
+    Object.entries(MODEL_TYPES).forEach(([key, value]) => {
+      const label = document.createElement('label');
+      label.className = 'model-option';
+      
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'modelType';
+      radio.value = value;
+      radio.id = `model-${value}`;
+      radio.checked = value === this.config.modelType;
+      radio.addEventListener('change', () => this.onModelTypeChange(value));
+      
+      const text = document.createElement('span');
+      text.textContent = this.formatModelName(key);
+      
+      label.appendChild(radio);
+      label.appendChild(text);
+      modelContainer.appendChild(label);
+    });
+    
+    console.log("Model selection setup complete");
+  }
+
+  /**
+   * Sets up simulation control buttons.
+   */
+  setupSimulationControls() {
+    // Turn controls
+    this.setupButton("takeTurn", () => this.takeSingleTurn());
+    this.setupButton("take10Turns", () => this.takeMultipleTurns(10));
+    this.setupButton("take100Turns", () => this.takeMultipleTurns(100));
+    
+    // Run controls
+    this.setupButton("startRun", () => this.startContinuousRun());
+    this.setupButton("stopRun", () => this.stopContinuousRun());
+    
+    // Other controls
+    this.setupButton("resetSim", () => this.resetSimulation());
+    this.setupButton("applyParams", () => this.applyParameters());
+    
+    console.log("Simulation controls setup complete");
+  }
+
+  /**
+   * Sets up parameter change listeners.
+   */
+  setupParameterListeners() {
+    const parameterInputs = document.querySelectorAll('.parameter-input');
+    parameterInputs.forEach(input => {
+      input.addEventListener('change', () => this.onParameterChange());
+      input.addEventListener('input', () => this.onParameterChange());
+    });
+    
+    console.log(`Set up listeners for ${parameterInputs.length} parameter inputs`);
+  }
+
+  /**
+   * Creates a new random intersection graph based on current configuration.
+   */
+  initializeGraph() {
+    try {
+      console.log("Initializing graph with config:", this.config);
+      
+      // Validate configuration
+      const errors = validateConfig(this.config);
+      if (errors.length > 0) {
+        console.error("Configuration errors:", errors);
+        this.showErrors(errors);
+        return false;
       }
-    }
-  }
 
-  /**
-   * Toggles the testing/debugging mode.
-   * Creates or removes a Tester instance, associates it with the simulator,
-   * and updates UI elements like the stats panel and testing button.
-   */
-  toggleTesting() {
-    this.testingEnabled = !this.testingEnabled;
-    const button = document.getElementById("toggleTesting");
-    const statsPanel = document.getElementById("stats"); // Re-fetch in case it was removed/re-added
-
-    if (button) {
-      button.textContent = `Testing: ${this.testingEnabled ? "On" : "Off"}`;
-    }
-
-    if (this.testingEnabled) {
-      this.tester = new Tester();
-      if (this.simulator) {
+      // Create graph initializer and generate graph
+      this.graphInitializer = new GraphInitializer(this.config);
+      const { people, groups } = this.graphInitializer.createGraph();
+      
+      this.people = people;
+      this.groups = groups;
+      
+      console.log(`Graph created: ${people.length} people, ${groups.length} groups`);
+      
+      // Create simulator
+      this.simulator = new Simulator(this.people, this.groups, this.config);
+      
+      // Initialize tester if debugging is enabled
+      if (this.config.enableStatistics) {
+        this.tester = new Tester();
         this.simulator.setTester(this.tester);
       }
-      if (statsPanel) statsPanel.classList.add("visible");
-    } else {
-      this.tester = null;
-      if (this.simulator) {
-        this.simulator.setTester(null);
-      }
-      if (statsPanel) statsPanel.classList.remove("visible");
-    }
-
-    // Update canvas size as toggling testing might change panel visibility and thus layout
-    this.updateCanvasSize(); 
-    // Re-initialize simulation if it exists to ensure tester is correctly (un)set and visualizer is updated
-    if (this.simulator) {
-      this.initialize(this.clubs, this.people); 
-    }
-  }
-
-  /**
-   * Binds event listeners to all UI control elements.
-   * This includes buttons for stepping through turns, starting/stopping runs,
-   * applying parameters, toggling testing, and selecting visualizers.
-   * Also handles the trait ratio slider input.
-   */
-  bindControls() {
-    // Turn stepping controls
-    document.getElementById("step1")?.addEventListener("click", () => {
-      if (this.tester) this.tester.setDebugMode(true); // Enable verbose logging for single step
-      this.runTurns(1);
-      if (this.tester) this.tester.setDebugMode(false); // Disable verbose logging after single step
-    });
-    document.getElementById("step10")?.addEventListener("click", () => this.runTurns(10));
-    document.getElementById("step100")?.addEventListener("click", () => this.runTurns(100));
-    
-    // Continuous run controls
-    document.getElementById("startRun")?.addEventListener("click", () => this.startContinuousRun());
-    document.getElementById("stopRun")?.addEventListener("click", () => this.stopContinuousRun());
-    
-    // Testing and parameter controls
-    document.getElementById("toggleTesting")?.addEventListener("click", () => this.toggleTesting());
-    document.getElementById("applyParams")?.addEventListener("click", () => this.applyParameters());
-    
-    // Visualizer selection
-    document.getElementById("visualizerSelect")?.addEventListener("change", (e) => {
-      if (e.target) this.switchVisualizer(e.target.value);
-    });
-
-    // Trait Ratio Slider
-    const traitRatioSlider = document.getElementById("traitRatio");
-    const traitRatioValue = document.getElementById("traitRatioValue");
-    if (traitRatioSlider && traitRatioValue) {
-      traitRatioSlider.addEventListener("input", () => {
-        const value = (parseFloat(traitRatioSlider.value) * 100).toFixed(0);
-        traitRatioValue.textContent = `${value}%`;
-      });
+      
+      // Initialize visualizer
+      this.initializeVisualizer();
+      
+      // Reset turn counter
+      this.currentTurn = 0;
+      this.updateTurnDisplay();
+      this.updateStatistics();
+      
+      console.log("Graph initialization complete");
+      return true;
+      
+    } catch (error) {
+      console.error("Error initializing graph:", error);
+      this.showError("Failed to initialize graph: " + error.message);
+      return false;
     }
   }
 
   /**
-   * Applies the current parameters from the UI to the simulation.
-   * This involves re-creating clubs and people based on the new settings,
-   * resetting the turn counter, and re-initializing the simulation and visualizer.
+   * Initializes the canvas visualizer.
    */
-  applyParameters() {
-    const config = getCurrentConfig(); // Get latest config from UI and defaults
-
-    // Get initial trait ratio for R from the slider
-    const traitRatioSlider = document.getElementById("traitRatio");
-    // Default to 0.5 (50% R) if slider not found or value is invalid
-    const rProportion = traitRatioSlider ? parseFloat(traitRatioSlider.value) || 0.5 : 0.5;
-
-    // Create Club instances
-    const clubs = Array(config.totalClubs)
-      .fill(null)
-      .map((_, i) => new Club(i));
-
-    // Calculate exact number of people for each trait based on rProportion
-    const totalPeople = config.totalPeople;
-    const rCount = Math.round(totalPeople * rProportion);
-    const bCount = totalPeople - rCount;
-
-    // Create Person instances with the calculated trait distribution
-    const people = [];
-    for (let i = 0; i < rCount; i++) {
-      people.push(new Person(i, "R")); // IDs 0 to rCount-1 are Trait R
-    }
-    for (let i = 0; i < bCount; i++) {
-      people.push(new Person(rCount + i, "B")); // IDs rCount to totalPeople-1 are Trait B
-    }
-
-    // Reset turn counter and update display
-    this.currentTurn = 0;
-    const turnCounterElement = document.getElementById("turnCounter");
-    if (turnCounterElement) turnCounterElement.textContent = this.currentTurn.toString();
-
-    // Initialize the dashboard (simulation & visualizer) with new clubs and people
-    this.initialize(clubs, people);
-
-    // Update the legend with the new initial trait counts
-    if (this.visualizer) {
-      this.visualizer.updateLegend({ R: rCount, B: bCount });
-    }
-  }
-
-  /**
-   * Runs the simulation for a specified number of turns.
-   * Updates the turn counter display and visualizer after the turns.
-   * @param {number} count - The number of turns to run.
-   */
-  runTurns(count) {
-    if (!this.simulator) {
-      console.error("Simulator not initialized. Please apply parameters first.");
+  initializeVisualizer() {
+    if (!this.canvas || !this.ctx) {
+      console.error("Canvas not found");
       return;
     }
 
-    for (let i = 0; i < count; i++) {
-      this.simulator.takeTurn();
-      this.currentTurn++;
-      // Update chart data directly if the ChartVisualizer is active
-      // This allows live updates for charts as turns progress.
-      if (this.visualizer instanceof ChartVisualizer || this.visualizer instanceof TheoryChartVisualizer) {
-        this.visualizer.updateData(this.currentTurn);
-      }
-    }
-    
-    // Update turn counter in UI
-    const turnCounterElement = document.getElementById("turnCounter");
-    if (turnCounterElement) turnCounterElement.textContent = this.currentTurn.toString();
-    
-    this.draw(); // Redraw the current visualizer to reflect changes
-
-    if (this.tester) {
-      this.updateStats(); // Update stats panel if tester is active
+    try {
+      // Set canvas size
+      const rect = this.canvas.parentElement.getBoundingClientRect();
+      this.canvas.width = rect.width - 32; // Account for padding
+      this.canvas.height = rect.height - 32;
+      
+      console.log(`Canvas size: ${this.canvas.width}x${this.canvas.height}`);
+      
+      // Create visualizer
+      this.visualizer = new CanvasVisualizer(
+        this.canvas,
+        this.ctx,
+        this.canvas.width,
+        this.canvas.height
+      );
+      
+      // Initialize with data
+      this.visualizer.initialize(this.groups, this.people);
+      this.visualizer.render();
+      
+      console.log("Visualizer initialized successfully");
+      
+    } catch (error) {
+      console.error("Error initializing visualizer:", error);
+      this.showError("Failed to initialize visualizer: " + error.message);
     }
   }
 
   /**
-   * Starts a continuous run of the simulation, taking one turn at a set interval.
+   * Handles model type selection changes.
+   */
+  onModelTypeChange(newModelType) {
+    console.log(`Model type changed to: ${newModelType}`);
+    this.config.modelType = newModelType;
+    
+    // Update parameter visibility
+    this.updateParameterVisibility();
+    
+    // Update simulator configuration
+    if (this.simulator) {
+      this.simulator.config.modelType = newModelType;
+    }
+    
+    // Update display
+    this.updateParameterDisplay();
+    const modelDisplay = document.getElementById("currentModelDisplay");
+    if (modelDisplay) {
+      modelDisplay.textContent = this.formatModelName(newModelType);
+    }
+  }
+
+  /**
+   * Updates parameter control visibility based on selected model.
+   */
+  updateParameterVisibility() {
+    const schellingParams = document.querySelectorAll('.schelling-params');
+    const voterParams = document.querySelectorAll('.voter-params');
+    
+    const showSchelling = this.config.modelType !== MODEL_TYPES.VOTER_ONLY;
+    const showVoter = this.config.modelType !== MODEL_TYPES.SCHELLING_ONLY;
+    
+    schellingParams.forEach(elem => {
+      elem.style.display = showSchelling ? 'block' : 'none';
+    });
+    
+    voterParams.forEach(elem => {
+      elem.style.display = showVoter ? 'block' : 'none';
+    });
+  }
+
+  /**
+   * Handles parameter changes and validates input.
+   */
+  onParameterChange() {
+    this.config = getCurrentConfig();
+    
+    const errors = validateConfig(this.config);
+    if (errors.length > 0) {
+      this.showErrors(errors);
+    } else {
+      this.clearErrors();
+    }
+    
+    this.updateParameterDisplay();
+  }
+
+  /**
+   * Takes a single simulation turn.
+   */
+  takeSingleTurn() {
+    if (!this.simulator) {
+      console.error("Simulator not initialized");
+      return;
+    }
+
+    try {
+      const results = this.simulator.takeTurn();
+      this.currentTurn = results.turn;
+      
+      // Update visualization
+      if (this.visualizer) {
+        this.visualizer.updateData(this.groups, this.people);
+        this.visualizer.render();
+      }
+      
+      this.updateTurnDisplay();
+      this.updateStatistics();
+      
+      // Check for convergence
+      if (this.simulator.convergenceReached) {
+        this.stopContinuousRun();
+        this.showMessage("Simulation has converged!");
+      }
+      
+      console.log(`Turn ${this.currentTurn} completed`);
+      
+    } catch (error) {
+      console.error("Error taking turn:", error);
+      this.showError("Error during simulation: " + error.message);
+    }
+  }
+
+  /**
+   * Takes multiple simulation turns.
+   */
+  takeMultipleTurns(numTurns) {
+    console.log(`Taking ${numTurns} turns...`);
+    for (let i = 0; i < numTurns && !this.simulator?.convergenceReached; i++) {
+      this.takeSingleTurn();
+    }
+  }
+
+  /**
+   * Starts continuous simulation run.
    */
   startContinuousRun() {
-    if (!this.runInterval) { // Prevent multiple intervals
-      // Read simulation speed from config, default to 50ms if not defined
-      const speed = (this.simulator && this.simulator.config && this.simulator.config.simulationSpeed) ? this.simulator.config.simulationSpeed : 50;
-      this.runInterval = setInterval(() => {
-        this.runTurns(1);
-      }, speed);
-      console.log(`Continuous run started with interval: ${speed}ms`);
-    }
+    if (this.isRunning) return;
+    
+    console.log("Starting continuous run");
+    this.isRunning = true;
+    this.updateControlsState();
+    
+    this.runInterval = setInterval(() => {
+      if (this.simulator?.convergenceReached || this.currentTurn >= this.config.maxTurns) {
+        this.stopContinuousRun();
+        return;
+      }
+      
+      this.takeSingleTurn();
+    }, this.config.simulationSpeed);
   }
 
   /**
-   * Stops an ongoing continuous simulation run.
+   * Stops continuous simulation run.
    */
   stopContinuousRun() {
+    if (!this.isRunning) return;
+    
+    console.log("Stopping continuous run");
+    this.isRunning = false;
+    this.updateControlsState();
+    
     if (this.runInterval) {
       clearInterval(this.runInterval);
       this.runInterval = null;
-      console.log("Continuous run stopped.");
     }
   }
 
   /**
-   * Initializes or re-initializes the dashboard with new sets of clubs and people.
-   * Creates a new Simulator instance with the provided data and current configuration.
-   * Sets up the tester if enabled, resets the turn counter, and initializes the visualizer.
-   * @param {Club[]} clubs - An array of Club objects.
-   * @param {Person[]} people - An array of Person objects.
+   * Resets the simulation to initial state.
    */
-  initialize(clubs, people) {
-    this.clubs = clubs;
-    this.people = people;
-    const config = getCurrentConfig(); // Get the latest configuration
+  resetSimulation() {
+    console.log("Resetting simulation");
+    this.stopContinuousRun();
+    this.applyParameters();
+  }
 
-    // Create a new Simulator instance
-    this.simulator = new Simulator(people, clubs, config);
-    if (this.testingEnabled && this.tester) {
-      this.simulator.setTester(this.tester); // Attach tester if active
+  /**
+   * Applies current parameter settings and reinitializes.
+   */
+  applyParameters() {
+    console.log("Applying parameters...");
+    this.config = getCurrentConfig();
+    
+    const errors = validateConfig(this.config);
+    if (errors.length > 0) {
+      this.showErrors(errors);
+      return;
     }
     
-    this.currentTurn = 0; // Reset turn counter
-    const turnCounterElement = document.getElementById("turnCounter");
-    if (turnCounterElement) turnCounterElement.textContent = this.currentTurn.toString();
-
-    // Initialize the current visualizer with the new data
-    if (this.visualizer) {
-      try {
-        this.visualizer.initialize(this.clubs, this.people);
-        this.visualizer.draw(); // Perform an initial draw
-        console.log("Visualizer initialized with:", {
-          clubs: this.clubs.length,
-          people: this.people.length,
-          visualizerType: this.visualizer.constructor.name
-        });
-      } catch (error) {
-        console.error("Error initializing visualizer:", error);
-      }
-    }
-
-    this.updateStats(); // Update the statistics panel
-  }
-
-  /**
-   * Switches the active visualizer based on the selected type.
-   * Cleans up the existing visualizer, creates a new instance of the selected type,
-   * and initializes it with the current simulation data.
-   * @param {string} type - The type of visualizer to switch to (e.g., "canvas", "graph", "chart").
-   */
-  switchVisualizer(type) {
-    console.log(`Switching visualizer to: ${type}`);
-    // Cleanup resources used by the current visualizer
-    if (this.visualizer) {
-      this.visualizer.cleanup();
-    }
-
-    // Create and store the new visualizer instance
-    switch (type) {
-      case "canvas":
-        this.visualizer = new CanvasVisualizer(
-          this.canvas,
-          this.ctx,
-          this.width,
-          this.height
-        );
-        break;
-      case "graph":
-        this.visualizer = new GraphVisualizer(
-          this.canvas, // Note: GraphVisualizer manages its own container, canvas might be hidden
-          this.ctx,    // Ctx might not be directly used by GraphVisualizer
-          this.width,
-          this.height
-        );
-        break;
-      case "chart":
-        this.visualizer = new ChartVisualizer(
-          this.canvas, // ChartVisualizer manages its own canvas for Chart.js
-          this.ctx,
-          this.width,
-          this.height
-        );
-        break;
-      case "theory":
-        this.visualizer = new TheoryChartVisualizer(
-          this.canvas, // TheoryChartVisualizer also manages its own canvas
-          this.ctx,
-          this.width,
-          this.height
-        );
-        break;
-      default:
-        console.error("Unknown visualizer type selected:", type);
-        // Optionally, revert to a default or do nothing
-        // For now, we just return to avoid breaking if current visualizer was cleaned up.
-        if (!this.visualizer) { // If cleanup happened and new one failed
-            this.visualizer = new CanvasVisualizer(this.canvas, this.ctx, this.width, this.height); // Fallback
-        }
-        this.visualizer.initialize(this.clubs, this.people); // Initialize fallback or existing
-        return;
-    }
-
-    // Initialize the new visualizer with current simulation state (clubs and people)
-    // This is crucial if visualizer is switched mid-simulation.
-    if (this.clubs.length > 0 || this.people.length > 0) {
-        this.visualizer.initialize(this.clubs, this.people);
-    } else {
-        // If no data yet (e.g. visualizer switched before first applyParameters), 
-        // applyParameters will handle the initialization.
-        // However, it's good practice to ensure the visualizer is ready.
-        this.visualizer.initialize([], []); // Initialize with empty data to set up its structure
-    }
-    this.visualizer.draw(); // Draw the newly activated visualizer
-  }
-
-  /**
-   * Triggers a draw operation on the currently active visualizer.
-   */
-  draw() {
-    if (this.visualizer) {
-      try {
-        this.visualizer.draw();
-      } catch (error) {
-        console.error("Error during visualizer.draw():", error, {
-          visualizerType: this.visualizer.constructor.name
-        });
-      }
+    this.stopContinuousRun();
+    
+    if (this.initializeGraph()) {
+      console.log("Parameters applied successfully");
     }
   }
 
   /**
-   * Updates the statistics panel in the UI with the latest data from the Tester instance.
-   * Shows turn count, join rates, and leave rates per club/trait.
+   * Updates the control buttons' enabled/disabled state.
    */
-  updateStats() {
-    if (!this.statsPanel) {
-        // Attempt to re-fetch if it was null initially, might have been added dynamically by some visualizers
-        this.statsPanel = document.getElementById("stats");
-        if (!this.statsPanel) return; // Still not found, exit
+  updateControlsState() {
+    const runButton = document.getElementById("startRun");
+    const stopButton = document.getElementById("stopRun");
+    const turnButtons = ["takeTurn", "take10Turns", "take100Turns", "resetSim", "applyParams"];
+    
+    if (runButton) runButton.disabled = this.isRunning;
+    if (stopButton) stopButton.disabled = !this.isRunning;
+    
+    turnButtons.forEach(id => {
+      const button = document.getElementById(id);
+      if (button) button.disabled = this.isRunning;
+    });
+  }
+
+  /**
+   * Updates the turn counter display.
+   */
+  updateTurnDisplay() {
+    const turnDisplay = document.getElementById("turnCounter");
+    if (turnDisplay) {
+      turnDisplay.textContent = `Turn: ${this.currentTurn}`;
     }
+  }
 
-    let html = `<span>Turn: ${this.currentTurn}</span>`;
+  /**
+   * Updates the parameter display with current values.
+   */
+  updateParameterDisplay() {
+    const paramDisplay = document.getElementById("parameterDisplay");
+    if (paramDisplay) {
+      paramDisplay.innerHTML = `
+        <div>Model: ${this.formatModelName(this.config.modelType)}</div>
+        <div>People: ${this.config.n}, Groups: ${this.config.m}</div>
+        <div>λ: ${this.config.lambda}, c: ${this.config.c}</div>
+        ${this.config.modelType !== MODEL_TYPES.SCHELLING_ONLY ? `<div>γ: ${this.config.gamma}</div>` : ''}
+      `;
+    }
+  }
 
-    if (this.tester && this.simulator && this.simulator.config && this.clubs && this.clubs.length > 0) {
-      const stats = this.tester.stats;
-      // Calculate expected join probability per club (k/C)
-      const expectedJoinProbPerClub = (this.simulator.config.joinProbability * 100 / this.clubs.length);
+  /**
+   * Updates the statistics display.
+   */
+  updateStatistics() {
+    if (!this.simulator) return;
+    
+    try {
+      const stats = this.simulator.getStatistics();
+      const currentStats = stats.history.turns[stats.history.turns.length - 1];
       
-      // Join Statistics Section
-      html += `<div class="stat-section">
-        <h4>Join Statistics (Overall)</h4>
-        <p>Expected Rate (per club): ${expectedJoinProbPerClub.toFixed(2)}%</p>
-        <p>Actual Rate (overall): ${(stats.join.actualRate * 100).toFixed(2)}% (Attempts: ${stats.join.attempts}, Successes: ${stats.join.successes})</p>
-      </div>`;
-
-      // Leave Statistics Section
-      if (stats.leave && stats.leave.byClub) {
-        html += '<div class="stat-section"><h4>Leave Statistics (by Club & Trait)</h4>';
-        stats.leave.byClub.forEach((clubStats, clubId) => {
-          if (!clubStats) return; // Skip if club data is null (e.g., gapped club IDs)
-          html += `<div class="club-stat">
-            <h5>Club ${clubId}</h5>`;
-          // Iterate over traits R and B, or whatever is defined in config
-          (this.simulator.config.traits || ["R", "B"]).forEach(trait => {
-            const traitData = clubStats[trait];
-            if (traitData) {
-              html += `<p>
-                <strong>Trait ${trait}:</strong> 
-                Expected Leave: ${(traitData.expectedProb * 100).toFixed(2)}%, 
-                Actual Leave: ${(traitData.actualRate * 100).toFixed(2)}% 
-                (Attempts: ${traitData.attempts}, Leaves: ${traitData.leaves})
-              </p>`;
-            } else {
-              html += `<p><strong>Trait ${trait}:</strong> No data</p>`;
-            }
-          });
-          html += "</div>";
-        });
-        html += "</div>";
+      if (currentStats) {
+        this.updateStatElement("totalEdges", currentStats.totalEdges);
+        this.updateStatElement("opinionPositive", currentStats.totalOpinions[1] || 0);
+        this.updateStatElement("opinionNegative", currentStats.totalOpinions[-1] || 0);
+        this.updateStatElement("segregationIndex", currentStats.segregationIndex.toFixed(3));
+        this.updateStatElement("convergenceMetric", currentStats.convergenceMetric.toFixed(6));
       }
-    } else if (this.tester) {
-        html += '<p><em>Simulation data or configuration not fully available for detailed stats.</em></p>';
+    } catch (error) {
+      console.error("Error updating statistics:", error);
     }
+  }
 
-    this.statsPanel.innerHTML = html;
+  /**
+   * Updates a single statistic element.
+   */
+  updateStatElement(id, value) {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = value;
+    }
+  }
+
+  // Utility methods
+
+  /**
+   * Sets up a button with event handler.
+   */
+  setupButton(id, handler) {
+    const button = document.getElementById(id);
+    if (button) {
+      button.addEventListener('click', handler);
+    } else {
+      console.warn(`Button ${id} not found`);
+    }
+  }
+
+  /**
+   * Formats model type name for display.
+   */
+  formatModelName(modelType) {
+    const names = {
+      [MODEL_TYPES.SCHELLING_ONLY]: "Schelling Only",
+      [MODEL_TYPES.VOTER_ONLY]: "Voter Only", 
+      [MODEL_TYPES.COMBINED]: "Combined Model"
+    };
+    return names[modelType] || modelType;
+  }
+
+  /**
+   * Shows error messages to the user.
+   */
+  showErrors(errors) {
+    console.error("Configuration errors:", errors);
+    const errorContainer = document.getElementById("parameterErrors");
+    if (errorContainer) {
+      errorContainer.innerHTML = errors.map(error => `<div>${error}</div>`).join('');
+      errorContainer.style.display = 'block';
+    }
+  }
+
+  /**
+   * Shows a single error message.
+   */
+  showError(message) {
+    console.error(message);
+    alert(message); // Simple fallback
+  }
+
+  /**
+   * Shows an informational message.
+   */
+  showMessage(message) {
+    console.log(message);
+    alert(message); // Simple fallback
+  }
+
+  /**
+   * Clears any displayed error messages.
+   */
+  clearErrors() {
+    const errorContainer = document.getElementById("parameterErrors");
+    if (errorContainer) {
+      errorContainer.innerHTML = '';
+      errorContainer.style.display = 'none';
+    }
   }
 }
