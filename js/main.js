@@ -99,13 +99,13 @@ async function initializeApp() {
     // Initialize performance monitoring
     performanceMonitor = new PerformanceMonitor();
     
-    // Check for required DOM elements
-    const requiredElements = ['canvasWrapper', 'controls', 'parameters'];
-    const missingElements = requiredElements.filter(id => !document.getElementById(id));
-    
-    if (missingElements.length > 0) {
-      throw new Error(`Missing required DOM elements: ${missingElements.join(', ')}`);
-    }
+         // Check for required DOM elements
+     const requiredElements = ['visualization', 'modelSelection', 'takeTurn'];
+     const missingElements = requiredElements.filter(id => !document.getElementById(id));
+     
+     if (missingElements.length > 0) {
+       throw new Error(`Missing required DOM elements: ${missingElements.join(', ')}`);
+     }
     
     // Initialize the main dashboard
     console.log('📊 Initializing dashboard...');
