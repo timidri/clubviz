@@ -25,6 +25,9 @@
             <div id="modelSelection" class="model-selection">
               <!-- Model radio buttons will be added by JavaScript -->
             </div>
+            <div class="model-description">
+              <p id="modelDescription" class="text-muted">Select a simulation model to begin</p>
+            </div>
           </section>
 
           <section class="parameters-section">
@@ -36,18 +39,15 @@
                 <label for="n">Number of people (n):</label>
                 <input type="number" id="n" class="parameter-input" min="10" max="1000" value="100" />
                 
-                <label for="m">Number of groups (m):</label>
-                <input type="number" id="m" class="parameter-input" min="1" max="100" value="10" />
-                
-                <label for="lambda">Connectivity (λ):</label>
-                <input type="number" id="lambda" class="parameter-input" min="0.1" max="10" step="0.1" value="1.0" />
+                <label for="m">Number of clubs (m):</label>
+                <input type="number" id="m" class="parameter-input" min="1" max="100" value="4" />
               </div>
 
               <!-- Schelling Model Parameters -->
               <div class="parameter-group schelling-params">
                 <h4>Schelling Model</h4>
                 <label for="c">Edge creation rate (c):</label>
-                <input type="number" id="c" class="parameter-input" min="0.1" max="10" step="0.1" value="1.0" />
+                <input type="number" id="c" class="parameter-input" min="0.1" max="10" step="0.1" value="2.0" />
                 
                 <label for="gFunction">G-function type:</label>
                 <select id="gFunction" class="parameter-input">
@@ -57,20 +57,89 @@
                 </select>
                 
                 <label for="gSteepness">G-function steepness:</label>
-                <input type="number" id="gSteepness" class="parameter-input" min="0.1" max="10" step="0.1" value="2.0" />
+                <input type="number" id="gSteepness" class="parameter-input" min="0.1" max="10" step="0.1" value="3.0" />
+              </div>
+
+              <!-- Graph Generation Parameters -->
+              <div class="parameter-group graph-generation-params">
+                <h4>Graph Generation</h4>
+                <label for="isHomogeneous">
+                  <input type="checkbox" id="isHomogeneous" checked> Homogeneous Generation
+                </label>
+                
+                <div id="homogeneousParams" class="sub-params">
+                  <label for="lambda">Connectivity (λ):</label>
+                  <input type="number" id="lambda" class="parameter-input" min="0.1" max="10" step="0.1" value="1.0" />
+                </div>
+                
+                <div id="nonHomogeneousParams" class="sub-params" style="display: none;">
+                  <label for="individualWeightDist">Individual weight distribution:</label>
+                  <select id="individualWeightDist" class="parameter-input">
+                    <option value="constant">Constant</option>
+                    <option value="uniform">Uniform</option>
+                    <option value="poisson">Poisson</option>
+                  </select>
+                  
+                  <label for="groupWeightDist">Group weight distribution:</label>
+                  <select id="groupWeightDist" class="parameter-input">
+                    <option value="constant">Constant</option>
+                    <option value="uniform">Uniform</option>
+                    <option value="poisson">Poisson</option>
+                  </select>
+                </div>
               </div>
 
               <!-- Voter Model Parameters -->
               <div class="parameter-group voter-params">
                 <h4>Voter Model</h4>
-                <label for="gamma">Opinion change rate (γ):</label>
-                <input type="number" id="gamma" class="parameter-input" min="0" max="1" step="0.01" value="0.1" />
                 
-                <label for="voterType">Voter type:</label>
-                <select id="voterType" class="parameter-input">
-                  <option value="group">Group-based</option>
-                  <option value="individual">Individual-based</option>
-                </select>
+                <!-- Pairwise Voter Parameters -->
+                <div class="voter-pairwise-params" style="display: none;">
+                  <label for="lambdaVoter">Update rate (λ):</label>
+                  <input type="number" id="lambdaVoter" class="parameter-input" min="0" max="2" step="0.1" value="0.5" />
+                  
+                  <label for="updateRule">Update rule:</label>
+                  <select id="updateRule" class="parameter-input">
+                    <option value="random">Random 50/50</option>
+                    <option value="first">First in pair</option>
+                  </select>
+                </div>
+                
+                <!-- Group-based Voter Parameters -->
+                <div class="voter-group-params">
+                  <label for="gamma">Opinion change rate (γ):</label>
+                  <input type="number" id="gamma" class="parameter-input" min="0" max="1" step="0.01" value="0.3" />
+                  
+                  <label for="voterType">Voter type:</label>
+                  <select id="voterType" class="parameter-input">
+                    <option value="group">Club-based</option>
+                    <option value="individual">Individual-based</option>
+                  </select>
+                  
+                  <label for="etaFunction">Opinion change function (η):</label>
+                  <select id="etaFunction" class="parameter-input">
+                    <option value="linear">Linear</option>
+                    <option value="sigmoid">Sigmoid</option>
+                    <option value="threshold">Threshold</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- SIR Model Parameters -->
+              <div class="parameter-group sir-params" style="display: none;">
+                <h4>SIR Epidemic Model</h4>
+                <label for="betaSIR">Infection rate (β):</label>
+                <input type="number" id="betaSIR" class="parameter-input" min="0" max="1" step="0.01" value="0.1" />
+                
+                <label for="gammaSIR">Recovery rate (γ):</label>
+                <input type="number" id="gammaSIR" class="parameter-input" min="0" max="1" step="0.01" value="0.05" />
+                
+                <label for="opinionTransmissionModifier">Opinion transmission modifier:</label>
+                <input type="number" id="opinionTransmissionModifier" class="parameter-input" min="0.1" max="5" step="0.1" value="1.5" />
+                
+                <label for="initialInfectedCount">Initial infected count:</label>
+                <input type="number" id="initialInfectedCount" class="parameter-input" min="1" max="50" value="5" />
               </div>
 
               <!-- Initial Conditions -->
@@ -79,7 +148,7 @@
                 <label for="initialOpinionSplit">Initial +1 opinion ratio:</label>
                 <input type="number" id="initialOpinionSplit" class="parameter-input" min="0" max="1" step="0.01" value="0.5" />
                 
-                <label for="initialGroupWeights">Group weight distribution:</label>
+                <label for="initialGroupWeights">Club weight distribution:</label>
                 <select id="initialGroupWeights" class="parameter-input">
                   <option value="uniform">Uniform</option>
                   <option value="exponential">Exponential</option>
@@ -110,6 +179,15 @@
               <div class="reset-controls">
                 <button id="resetSim" class="btn btn-warning">Reset</button>
               </div>
+              
+              <div class="export-controls">
+                <h4>Data Export</h4>
+                <button id="exportData" class="btn btn-info">Export CSV</button>
+                <button id="exportGraph" class="btn btn-info">Export Graph JSON</button>
+                <button id="exportConfig" class="btn btn-info">Save Config</button>
+                <input type="file" id="importConfig" accept=".json" style="display: none;">
+                <button id="loadConfig" class="btn btn-info">Load Config</button>
+              </div>
             </div>
             
             <div class="simulation-status">
@@ -123,7 +201,7 @@
             <div class="visualizer-selection">
               <label for="visualizerSelect">Visualizer:</label>
               <select id="visualizerSelect" class="parameter-input">
-                <option value="canvas">Canvas (Groups)</option>
+                <option value="canvas">Canvas (Clubs)</option>
                 <option value="graph">Network Graph</option>
                 <option value="chart">Time Series</option>
               </select>
@@ -159,25 +237,52 @@
             <div id="simulationStats" class="stats-panel">
               <h4>Statistics</h4>
               <div id="statsContent">
-                <div class="stat-item">
-                  <span class="stat-label">Total Edges:</span>
-                  <span id="totalEdges" class="stat-value">0</span>
+                <div class="stat-section">
+                  <h5>Network</h5>
+                  <div class="stat-item">
+                    <span class="stat-label">Total Edges:</span>
+                    <span id="totalEdges" class="stat-value">0</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Avg Degree:</span>
+                    <span id="averageDegree" class="stat-value">0.00</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Density:</span>
+                    <span id="networkDensity" class="stat-value">0.000</span>
+                  </div>
                 </div>
-                <div class="stat-item">
-                  <span class="stat-label">Opinion +1:</span>
-                  <span id="opinionPositive" class="stat-value">0</span>
+                
+                <div class="stat-section">
+                  <h5>Opinions</h5>
+                  <div class="stat-item">
+                    <span class="stat-label">Opinion +1:</span>
+                    <span id="opinionPositive" class="stat-value">0</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Opinion -1:</span>
+                    <span id="opinionNegative" class="stat-value">0</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Opinion Ratio:</span>
+                    <span id="opinionRatio" class="stat-value">1.00</span>
+                  </div>
                 </div>
-                <div class="stat-item">
-                  <span class="stat-label">Opinion -1:</span>
-                  <span id="opinionNegative" class="stat-value">0</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Segregation Index:</span>
-                  <span id="segregationIndex" class="stat-value">0.000</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Convergence:</span>
-                  <span id="convergenceMetric" class="stat-value">0.000</span>
+                
+                <div class="stat-section">
+                  <h5>Dynamics</h5>
+                  <div class="stat-item">
+                    <span class="stat-label">Segregation Index:</span>
+                    <span id="segregationIndex" class="stat-value">0.000</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Convergence:</span>
+                    <span id="convergenceMetric" class="stat-value">0.000</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Homophilous Clubs:</span>
+                    <span id="homophilousClubs" class="stat-value">0/0</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -190,7 +295,7 @@
         <p>Based on "Schelling and Voter Model on Random Intersection Graph" research</p>
         <div class="model-info">
           <strong>Current Model:</strong> 
-          <span id="currentModelDisplay">Schelling Only</span>
+          <span id="currentModelDisplay">Combined</span>
         </div>
       </footer>
     </div>

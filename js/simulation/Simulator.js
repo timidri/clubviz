@@ -236,9 +236,22 @@ export class Simulator {
       const recentHistory = this.statistics.convergenceHistory.slice(-historyLength);
       const variance = this.calculateVariance(recentHistory);
       
-      if (variance < this.config.convergenceThreshold) {
+      // Additional check: ensure clubs actually show homophily (not just stability)
+      const minHomophilyForConvergence = 0.7; // At least 70% of clubs should be homophilous
+      const homophilousClubs = this.groups.filter(group => {
+        const stats = group.getStatistics();
+        if (stats.memberCount === 0) return false;
+        // Club is homophilous if >80% of members share the same opinion
+        return Math.max(stats.opinionProportions.positive, stats.opinionProportions.negative) > 0.8;
+      }).length;
+      
+      const homophilyRatio = this.groups.length > 0 ? homophilousClubs / this.groups.length : 0;
+      
+      if (variance < this.config.convergenceThreshold && homophilyRatio >= minHomophilyForConvergence) {
         this.convergenceReached = true;
-        console.log(`Convergence reached at turn ${this.turnCounter} (variance: ${variance.toFixed(6)})`);
+        console.log(`Convergence reached at turn ${this.turnCounter}`);
+        console.log(`  Variance: ${variance.toFixed(6)}, Homophily ratio: ${homophilyRatio.toFixed(2)}`);
+        console.log(`  ${homophilousClubs}/${this.groups.length} clubs are homophilous`);
       }
     }
     
@@ -272,11 +285,11 @@ export class Simulator {
     console.log(`Segregation index: ${stats.segregationIndex.toFixed(3)}`);
     console.log(`Convergence metric: ${stats.convergenceMetric.toFixed(6)}`);
     
-    // Group composition summary
+    // Club composition summary
     const groupSummary = stats.groupStats.map(g => 
-      `G${g.id}(${g.memberCount}): ${g.opinionProportions.positive.toFixed(2)}+/${g.opinionProportions.negative.toFixed(2)}-`
+      `C${g.id}(${g.memberCount}): ${g.opinionProportions.positive.toFixed(2)}+/${g.opinionProportions.negative.toFixed(2)}-`
     ).join(', ');
-    console.log(`Groups: ${groupSummary}`);
+    console.log(`Clubs: ${groupSummary}`);
   }
 
   /**

@@ -133,6 +133,7 @@ export class Group {
   /**
    * Calculates the Schelling model edge deletion rate for a person.
    * Based on the paper's formula: β(aᵢ, k⁺ⱼ(t), k⁻ⱼ(t))
+   * Higher deletion rate when person's opinion disagrees with club majority.
    * @param {Person} person - The person to calculate deletion rate for
    * @param {function} gFunction - The g function from configuration
    * @returns {number} Edge deletion probability (0 to 1)
@@ -143,18 +144,24 @@ export class Group {
     const negativeCount = this.getOpinionCount(-1);  // k⁻ⱼ
     const totalCount = positiveCount + negativeCount;
     
-    if (totalCount === 0) return 0; // No members, no deletion
+    if (totalCount <= 1) return 0; // No deletion if alone or club is empty
     
-    // Calculate the opinion fraction difference
-    const opinionFraction = positiveCount / totalCount;
-    const fractionDifference = opinionFraction - 0.5; // Deviation from balanced
+    // Calculate how much the person disagrees with the club majority
+    // If person has opinion +1 and club is mostly -1, they should leave
+    // If person has opinion -1 and club is mostly +1, they should leave
+    const majorityOpinion = positiveCount > negativeCount ? 1 : -1;
+    const majorityStrength = Math.abs(positiveCount - negativeCount) / totalCount;
     
-    // Apply g function with person's opinion
-    // Negative person opinion * positive fraction difference = higher deletion rate
-    const gInput = -personOpinion * fractionDifference * 2; // Scale to [-1, 1]
-    const deletionRate = gFunction(gInput);
+    // Person disagrees with majority if their opinion differs from majority opinion
+    const disagreesWithMajority = personOpinion !== majorityOpinion;
     
-    return Math.max(0, Math.min(1, deletionRate));
+    if (!disagreesWithMajority) {
+      // Person agrees with majority - low deletion probability
+      return gFunction(-majorityStrength); // Negative input = low deletion rate
+    } else {
+      // Person disagrees with majority - high deletion probability
+      return gFunction(majorityStrength); // Positive input = high deletion rate
+    }
   }
 
   /**

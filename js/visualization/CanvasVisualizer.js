@@ -71,36 +71,43 @@ export class CanvasVisualizer extends Visualizer {
   }
 
   /**
-   * Calculates optimal positions for groups in a grid layout.
+   * Calculates optimal positions for clubs in a very compact grid layout.
    */
   calculateGroupPositions() {
     const numGroups = this.groups.length;
     
-    // Calculate grid layout
-    const aspectRatio = this.width / this.height;
-    let numColumns = Math.ceil(Math.sqrt(numGroups * aspectRatio));
-    let numRows = Math.ceil(numGroups / numColumns);
-
-    // Adjust for better aesthetics
-    if (numRows > numColumns * 1.5 && numColumns < numGroups) {
-      numColumns++;
+    // Force more compact arrangements
+    let numColumns, numRows;
+    if (numGroups <= 4) {
+      // Force tighter layouts
+      if (numGroups === 1) { numColumns = 1; numRows = 1; }
+      else if (numGroups === 2) { numColumns = 2; numRows = 1; }
+      else if (numGroups === 3) { numColumns = 3; numRows = 1; }
+      else if (numGroups === 4) { numColumns = 2; numRows = 2; }
+    } else {
+      numColumns = Math.ceil(Math.sqrt(numGroups));
       numRows = Math.ceil(numGroups / numColumns);
     }
 
-    const padding = Math.min(this.width, this.height) * 0.05;
-    const cellWidth = (this.width - padding * 2) / numColumns;
-    const cellHeight = (this.height - padding * 2) / numRows;
+    // Minimal padding for maximum space utilization
+    const padding = 20; // Fixed small padding
+    const availableWidth = this.width - padding * 2;
+    const availableHeight = this.height - padding * 2;
+    
+    const cellWidth = availableWidth / numColumns;
+    const cellHeight = availableHeight / numRows;
 
-    // Calculate group radius
-    this.groupRadius = Math.min(cellWidth, cellHeight) * 0.35;
+    // Much smaller club radius - force compact size
+    const maxRadius = Math.min(cellWidth, cellHeight) * 0.25; // Reduced from 0.35
+    this.groupRadius = Math.min(maxRadius, 80); // Cap at 80px instead of 120px
 
-    // Position groups
+    // Position groups with minimal spacing
     this.groups.forEach((group, i) => {
       const row = Math.floor(i / numColumns);
       const col = i % numColumns;
       
-      const x = padding + cellWidth * col + cellWidth / 2;
-      const y = padding + cellHeight * row + cellHeight / 2;
+      const x = padding + cellWidth * (col + 0.5);
+      const y = padding + cellHeight * (row + 0.5);
       
       this.groupPositions.set(group.id, { x, y });
       
@@ -110,7 +117,8 @@ export class CanvasVisualizer extends Visualizer {
       }
     });
 
-    console.log(`Positioned ${numGroups} groups in ${numRows}x${numColumns} grid`);
+    console.log(`Positioned ${numGroups} clubs in ${numRows}x${numColumns} very compact grid`);
+    console.log(`Club radius: ${this.groupRadius}px, cell size: ${cellWidth.toFixed(0)}x${cellHeight.toFixed(0)}`);
   }
 
   /**
@@ -225,8 +233,8 @@ export class CanvasVisualizer extends Visualizer {
   }
 
   /**
-   * Draws statistics bar for a group showing opinion distribution.
-   * @param {Group} group - The group to draw stats for.
+   * Draws statistics bar for a club showing opinion distribution.
+   * @param {Group} group - The club to draw stats for.
    */
   drawGroupStats(group) {
     const positiveCount = group.getOpinionCount(1);
@@ -235,9 +243,9 @@ export class CanvasVisualizer extends Visualizer {
 
     if (total === 0) return;
 
-    const barWidth = this.groupRadius * 1.4;
-    const barHeight = this.groupRadius * 0.15;
-    const statsY = -this.groupRadius - barHeight * 2;
+    const barWidth = this.groupRadius * 1.0;
+    const barHeight = Math.max(8, this.groupRadius * 0.1);
+    const statsY = -this.groupRadius - barHeight * 1.2;
 
     // Background
     this.ctx.fillStyle = "#f0f0f0";
@@ -263,28 +271,28 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.lineWidth = 1;
     this.ctx.strokeRect(-barWidth/2, statsY, barWidth, barHeight);
 
-    // Count labels
-    const fontSize = Math.max(8, this.minDimension * 0.012);
+    // Count labels - very compact
+    const fontSize = Math.max(8, Math.min(12, this.groupRadius * 0.12));
     this.ctx.font = `${fontSize}px Arial`;
     this.ctx.textAlign = "center";
     this.ctx.fillStyle = "#333";
     
-    const labelY = statsY - fontSize * 0.3;
+    const labelY = statsY - fontSize * 0.1;
     this.ctx.fillText(`+1: ${positiveCount} | -1: ${negativeCount}`, 0, labelY);
   }
 
   /**
-   * Draws the group label.
-   * @param {Group} group - The group to draw label for.
+   * Draws the club label.
+   * @param {Group} group - The club to draw label for.
    */
   drawGroupLabel(group) {
-    const fontSize = Math.max(10, this.minDimension * 0.015);
+    const fontSize = Math.max(10, Math.min(14, this.groupRadius * 0.15));
     this.ctx.font = `bold ${fontSize}px Arial`;
     this.ctx.textAlign = "center";
     this.ctx.fillStyle = "#333";
     
-    const labelY = this.groupRadius + fontSize * 1.5;
-    this.ctx.fillText(`Group ${group.id}`, 0, labelY);
+    const labelY = this.groupRadius + fontSize * 1.0;
+    this.ctx.fillText(`Club ${group.id}`, 0, labelY);
   }
 
   /**
@@ -305,15 +313,16 @@ export class CanvasVisualizer extends Visualizer {
     const opinion = person.getOpinion();
     const color = this.colors[opinion] || "#888";
 
-    // Draw person dot
+    // Draw person dot - sized for compact layout
+    const dotRadius = Math.max(3, Math.min(6, this.groupRadius * 0.07));
     this.ctx.beginPath();
-    this.ctx.arc(x, y, Math.max(2, this.minDimension * 0.008), 0, Math.PI * 2);
+    this.ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
     this.ctx.fillStyle = color;
     this.ctx.fill();
     
     // Add white border for visibility
     this.ctx.strokeStyle = "#fff";
-    this.ctx.lineWidth = 1;
+    this.ctx.lineWidth = Math.max(0.5, dotRadius * 0.15);
     this.ctx.stroke();
   }
 

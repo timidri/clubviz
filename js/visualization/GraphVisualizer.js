@@ -137,7 +137,7 @@ export class GraphVisualizer extends Visualizer {
         data: {
           id: `p${person.id}`,
           label: `P${person.id}`,
-          color: person.trait === "R" ? "#E91E63" : "#2196F3",
+          color: person.getOpinion() === 1 ? "#E91E63" : "#2196F3",
           type: "person",
         },
       });

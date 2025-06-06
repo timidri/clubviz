@@ -51,9 +51,16 @@ export class Person {
   /**
    * Changes the person's opinion (used in voter model).
    * @param {number} newOpinion - New opinion value (+1 or -1)
-   * @param {number} turn - Current turn number
+   * @param {number} turn - Current turn number (default: 0)
+   * @throws {Error} If newOpinion is not +1 or -1
+   * @returns {boolean} True if opinion actually changed, false otherwise
    */
-  changeOpinion(newOpinion, turn) {
+  changeOpinion(newOpinion, turn = 0) {
+    // Validate opinion value
+    if (newOpinion !== 1 && newOpinion !== -1) {
+      throw new Error(`Invalid opinion value: ${newOpinion}. Must be +1 or -1.`);
+    }
+    
     if (newOpinion !== this.opinion) {
       const oldOpinion = this.opinion;
       this.opinion = newOpinion;
@@ -62,8 +69,14 @@ export class Person {
       this.turnState.opinionChanged = true;
       
       // Log opinion change for debugging
-      console.log(`Person ${this.id}: Opinion changed from ${oldOpinion} to ${newOpinion} at turn ${turn}`);
+      if (window.debug?.isEnabled) {
+        console.log(`Person ${this.id}: Opinion changed from ${oldOpinion} to ${newOpinion} at turn ${turn}`);
+      }
+      
+      return true;
     }
+    
+    return false;
   }
 
   /**
