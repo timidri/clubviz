@@ -104,12 +104,15 @@ export class CanvasVisualizer extends Visualizer {
     const cellWidth = availableWidth / numColumns;
     const cellHeight = availableHeight / numRows;
 
-    // Calculate radius to fit within the cell with a small margin, ensuring no overlap
-    const margin = Math.min(cellWidth, cellHeight) * 0.1; // 10% margin within cell
-    const maxRadius = Math.min(cellWidth, cellHeight) / 2 - margin;
-    this.groupRadius = Math.max(25, maxRadius); // Set a minimum radius of 25px
+    // Calculate radius to fit within the cell with a small margin.
+    // This is more aggressive to ensure everything fits.
+    const margin = Math.min(cellWidth, cellHeight) * 0.15; // Increase margin to 15%
+    const maxRadius = (Math.min(cellWidth, cellHeight) / 2) - margin;
+    
+    // Make radius smaller to leave space for external labels.
+    this.groupRadius = Math.max(20, maxRadius * 0.8); // Reduce radius by 20% for label space
 
-    console.log(`Refactored Grid: ${numRows}x${numColumns}, Cell: ${cellWidth.toFixed(0)}x${cellHeight.toFixed(0)}, Radius: ${this.groupRadius.toFixed(0)}`);
+    console.log(`Compact Grid: ${numRows}x${numColumns}, Radius: ${this.groupRadius.toFixed(0)}`);
 
     // Position groups in the center of their grid cells
     this.groups.forEach((group, i) => {
@@ -282,35 +285,37 @@ export class CanvasVisualizer extends Visualizer {
 
     const stats = group.getStatistics();
     
-    // Dynamic font size based on radius
-    const statsFontSize = Math.max(9, Math.min(14, this.groupRadius * 0.15));
+    // Dynamic font size based on radius, but with a minimum for readability
+    const statsFontSize = Math.max(10, Math.min(13, this.groupRadius * 0.2));
     this.ctx.font = `${statsFontSize}px Inter, sans-serif`;
-    this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     this.ctx.textAlign = "center";
-    this.ctx.textBaseline = "middle";
+    this.ctx.textBaseline = "top"; // Align text to the top
 
-    const textY = pos.y + this.groupRadius * 0.3;
+    // Position text below the circle
+    const textY = pos.y + this.groupRadius + (statsFontSize * 1.5);
     const lineHeight = statsFontSize * 1.4;
 
-    this.ctx.fillText(`Members: ${stats.memberCount}`, pos.x, textY);
-    this.ctx.fillText(`+1: ${stats.opinionCounts.positive} / -1: ${stats.opinionCounts.negative}`, pos.x, textY + lineHeight);
+    this.ctx.fillText(`Members: ${stats.memberCount}`, pos.x, textY + lineHeight);
+    this.ctx.fillText(`+1: ${stats.opinionCounts.positive} | -1: ${stats.opinionCounts.negative}`, pos.x, textY + (lineHeight * 2));
   }
 
   /**
-   * Draws a dynamic, readable label for the group.
+   * Draws a dynamic, readable label for the group below the circle.
    */
   drawGroupLabel(group) {
     const pos = this.groupPositions.get(group.id);
     if (!pos) return;
 
-    // Dynamic font size based on radius
-    const labelFontSize = Math.max(12, Math.min(20, this.groupRadius * 0.25));
+    // Dynamic font size, ensuring it's large enough to be read
+    const labelFontSize = Math.max(14, Math.min(22, this.groupRadius * 0.3));
     this.ctx.font = `bold ${labelFontSize}px Inter, sans-serif`;
     this.ctx.fillStyle = "#374151";
     this.ctx.textAlign = "center";
-    this.ctx.textBaseline = "middle";
-    
-    const textY = pos.y - this.groupRadius * 0.2;
+    this.ctx.textBaseline = "top"; // Align text to the top for consistent positioning
+
+    // Position text below the circle
+    const textY = pos.y + this.groupRadius + (labelFontSize * 0.5);
     
     this.ctx.fillText(`Club ${group.id}`, pos.x, textY);
   }
