@@ -760,44 +760,45 @@ body {
   bottom: 125%;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--gray-900);
+  background-color: var(--gray-800);
   color: white;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
-  font-size: 0.75rem;
-  font-weight: 400;
+  font-size: 0.8125rem;
+  font-weight: 500;
   line-height: 1.4;
-  white-space: pre-line;
   width: 280px;
+  max-width: calc(var(--sidebar-width) - 3rem);
   text-align: left;
-  box-shadow: var(--shadow-lg);
-  z-index: 1000;
-  opacity: 0;
   visibility: hidden;
-  transition: all 0.2s ease;
-  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 1001;
+  box-shadow: var(--shadow-lg);
+  transform: translateX(-50%) translateY(-10px);
 }
 
 .help-icon::before {
   content: '';
   position: absolute;
-  bottom: 115%;
+  bottom: calc(125% - 5px);
   left: 50%;
   transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid var(--gray-900);
-  opacity: 0;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--gray-800) transparent transparent transparent;
   visibility: hidden;
-  transition: all 0.2s ease;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 1002;
+  transform: translateX(-50%) translateY(-10px);
 }
 
 .help-icon:hover::after,
 .help-icon:hover::before {
-  opacity: 1;
   visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* === Enhanced Sidebar Visibility === */

@@ -447,61 +447,82 @@ export class Simulator {
    * @returns {object} Network statistics
    */
   calculateNetworkMeasures() {
-    const totalDegree = this.people.reduce((sum, person) => sum + person.getIntersectionDegree(), 0);
-    const averageDegree = this.people.length > 0 ? totalDegree / this.people.length : 0;
+    const degrees = this.people.map(p => p.getIntersectionDegree());
+    const totalDegree = degrees.reduce((sum, degree) => sum + degree, 0);
+    const numPeople = this.people.length;
+
+    if (numPeople === 0) {
+      return {
+        avgDegree: 0,
+        density: 0,
+        gini: 0
+      };
+    }
     
+    // Calculate Gini coefficient for degree distribution
+    degrees.sort((a, b) => a - b);
+    let numerator = 0;
+    degrees.forEach((degree, i) => {
+      numerator += (i + 1) * degree;
+    });
+    const gini = (2 * numerator) / (numPeople * totalDegree) - (numPeople + 1) / numPeople;
+
     return {
-      averageDegree,
-      totalDegree,
-      density: this.people.length > 1 ? totalDegree / (this.people.length * (this.people.length - 1)) : 0
+      avgDegree: totalDegree / numPeople,
+      density: totalDegree / (numPeople * (numPeople - 1)),
+      gini: isNaN(gini) ? 0 : gini,
     };
   }
 
   /**
-   * Calculates a segregation index measuring opinion clustering.
-   * @returns {number} Segregation index (0 = mixed, 1 = perfectly segregated)
+   * Calculates the Index of Dissimilarity, a measure of segregation.
+   * Value of 0 means perfect integration, 1 means total segregation.
+   * @returns {number} Segregation index
    */
   calculateSegregationIndex() {
-    let totalHomophily = 0;
-    let totalConnections = 0;
-    
-    this.people.forEach(person => {
-      const neighbors = person.getNeighbors();
-      if (neighbors.size > 0) {
-        const sameOpinionNeighbors = Array.from(neighbors)
-          .filter(neighbor => neighbor.getOpinion() === person.getOpinion()).length;
-        totalHomophily += sameOpinionNeighbors / neighbors.size;
-        totalConnections++;
-      }
+    let totalDissimilarity = 0;
+    const totalPositive = this.people.filter(p => p.getOpinion() === 1).length;
+    const totalNegative = this.people.length - totalPositive;
+
+    if (totalPositive === 0 || totalNegative === 0) {
+      return 1; // Fully segregated if only one opinion exists
+    }
+
+    this.groups.forEach(group => {
+      const positiveInGroup = group.getOpinionCount(1);
+      const negativeInGroup = group.getOpinionCount(-1);
+      
+      const dissimilarity = Math.abs((positiveInGroup / totalPositive) - (negativeInGroup / totalNegative));
+      totalDissimilarity += dissimilarity;
     });
-    
-    return totalConnections > 0 ? totalHomophily / totalConnections : 0;
+
+    return totalDissimilarity / 2;
   }
 
   /**
-   * Calculates a metric for detecting convergence.
-   * Based on rate of change in opinion distribution and edge structure.
-   * @returns {number} Convergence metric (lower = more stable)
+   * Calculates a metric for convergence based on the rate of change of opinion distribution.
+   * @returns {number} A value that is small when the system is stable.
    */
   calculateConvergenceMetric() {
-    if (this.statistics.turns.length < 2) return 1.0;
+    const history = this.statistics.turns;
+    if (history.length < 2) return 1;
+
+    const currentOpinions = history[history.length - 1].totalOpinions;
+    const prevOpinions = history[history.length - 2].totalOpinions;
+
+    const currentPositive = currentOpinions[1] || 0;
+    const currentNegative = currentOpinions[-1] || 0;
+    const prevPositive = prevOpinions[1] || 0;
+    const prevNegative = prevOpinions[-1] || 0;
+
+    const totalPeople = this.people.length;
+    if (totalPeople === 0) return 0;
+
+    // Calculate sum of absolute differences in proportions
+    const diff = Math.abs(currentPositive - prevPositive) + Math.abs(currentNegative - prevNegative);
     
-    const current = this.statistics.turns[this.statistics.turns.length - 1];
-    const previous = this.statistics.turns[this.statistics.turns.length - 2];
-    
-    // Change in opinion distribution
-    const opinionChange = Math.abs(
-      (current.totalOpinions[1] || 0) - (previous.totalOpinions[1] || 0)
-    ) / this.people.length;
-    
-    // Change in edge count
-    const edgeChange = Math.abs(current.totalEdges - previous.totalEdges) / 
-      Math.max(current.totalEdges, previous.totalEdges, 1);
-    
-    // Change in segregation
-    const segregationChange = Math.abs(current.segregationIndex - previous.segregationIndex);
-    
-    return opinionChange + edgeChange + segregationChange;
+    // Normalize by total population * 2 (since each change is counted twice)
+    return diff / (2 * totalPeople);
   }
 
   /**
