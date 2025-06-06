@@ -71,7 +71,7 @@ export class CanvasVisualizer extends Visualizer {
   }
 
   /**
-   * Calculates optimal positions for clubs in an extremely compact layout.
+   * Calculates optimal positions for clubs in a much more compact, centered layout.
    */
   calculateGroupPositions() {
     const numGroups = this.groups.length;
@@ -79,7 +79,7 @@ export class CanvasVisualizer extends Visualizer {
     
     console.log(`Canvas size: ${this.width}x${this.height}`);
     
-    // Extremely compact grid arrangements
+    // More compact grid arrangements with better aspect ratios
     let numColumns, numRows;
     if (numGroups === 1) { 
       numColumns = 1; numRows = 1; 
@@ -98,38 +98,43 @@ export class CanvasVisualizer extends Visualizer {
       numRows = Math.ceil(numGroups / numColumns);
     }
 
-    // Minimal padding and spacing
-    const padding = 30;
-    const spacing = 20; // Space between clubs
+    // Much more generous sizing
+    const padding = Math.min(40, this.width * 0.05);
     const availableWidth = this.width - padding * 2;
     const availableHeight = this.height - padding * 2;
     
-    // Calculate cell dimensions
+    // Calculate cell dimensions with minimal spacing
     const cellWidth = availableWidth / numColumns;
     const cellHeight = availableHeight / numRows;
     
-    // Aggressive radius calculation for maximum compactness
-    const maxRadiusFromWidth = (cellWidth - spacing) * 0.4;
-    const maxRadiusFromHeight = (cellHeight - spacing) * 0.4;
-    this.groupRadius = Math.max(40, Math.min(maxRadiusFromWidth, maxRadiusFromHeight, 70));
+    // Much larger radius calculation - use most of available space
+    const maxRadiusFromWidth = cellWidth * 0.35;  // Use 35% of cell width
+    const maxRadiusFromHeight = cellHeight * 0.35; // Use 35% of cell height
+    this.groupRadius = Math.max(60, Math.min(maxRadiusFromWidth, maxRadiusFromHeight, 120));
 
     console.log(`Grid: ${numRows}x${numColumns}, Cell: ${cellWidth.toFixed(0)}x${cellHeight.toFixed(0)}, Radius: ${this.groupRadius}`);
 
-    // Position groups in a tight grid
+    // Center the entire grid layout in the canvas
+    const totalGridWidth = numColumns * cellWidth;
+    const totalGridHeight = numRows * cellHeight;
+    const gridOffsetX = (this.width - totalGridWidth) / 2;
+    const gridOffsetY = (this.height - totalGridHeight) / 2;
+
+    // Position groups in a centered, compact grid
     this.groups.forEach((group, i) => {
       const row = Math.floor(i / numColumns);
       const col = i % numColumns;
       
-      // Center each club within its cell
-      const x = padding + cellWidth * col + cellWidth * 0.5;
-      const y = padding + cellHeight * row + cellHeight * 0.5;
+      // Center each club within its cell, with grid centered on canvas
+      const x = gridOffsetX + cellWidth * col + cellWidth * 0.5;
+      const y = gridOffsetY + cellHeight * row + cellHeight * 0.5;
       
       this.groupPositions.set(group.id, { x, y });
       
       console.log(`Club ${group.id}: position (${x.toFixed(0)}, ${y.toFixed(0)})`);
     });
 
-    console.log(`Positioned ${numGroups} clubs in ${numRows}x${numColumns} compact grid, radius=${this.groupRadius}px`);
+    console.log(`Positioned ${numGroups} clubs in centered ${numRows}x${numColumns} grid, radius=${this.groupRadius}px`);
   }
 
   /**
@@ -236,13 +241,27 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.save();
     this.ctx.translate(pos.x, pos.y);
 
-    // Draw group circle
+    // Draw group circle with gradient and shadow
     this.ctx.beginPath();
     this.ctx.arc(0, 0, this.groupRadius, 0, Math.PI * 2);
-    this.ctx.strokeStyle = "#ccc";
-    this.ctx.lineWidth = Math.max(1, this.minDimension * 0.002);
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    
+    // Create gradient fill
+    const gradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, this.groupRadius);
+    gradient.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+    gradient.addColorStop(1, "rgba(248, 250, 252, 0.9)");
+    this.ctx.fillStyle = gradient;
     this.ctx.fill();
+    
+    // Enhanced border
+    this.ctx.strokeStyle = "#e2e8f0";
+    this.ctx.lineWidth = Math.max(2, this.groupRadius * 0.02);
+    this.ctx.stroke();
+    
+    // Add subtle outer shadow
+    this.ctx.beginPath();
+    this.ctx.arc(0, 0, this.groupRadius + 2, 0, Math.PI * 2);
+    this.ctx.strokeStyle = "rgba(0, 0, 0, 0.1)";
+    this.ctx.lineWidth = 1;
     this.ctx.stroke();
 
     // Draw group statistics
@@ -270,41 +289,50 @@ export class CanvasVisualizer extends Visualizer {
 
     if (total === 0) return;
 
-    const barWidth = this.groupRadius * 1.0;
-    const barHeight = Math.max(8, this.groupRadius * 0.1);
-    const statsY = -this.groupRadius - barHeight * 1.2;
+    const barWidth = this.groupRadius * 1.4;
+    const barHeight = Math.max(12, this.groupRadius * 0.15);
+    const statsY = -this.groupRadius - barHeight * 2;
 
-    // Background
-    this.ctx.fillStyle = "#f0f0f0";
+    // Background with gradient
+    const bgGradient = this.ctx.createLinearGradient(-barWidth/2, statsY, -barWidth/2, statsY + barHeight);
+    bgGradient.addColorStop(0, "#f8fafc");
+    bgGradient.addColorStop(1, "#e2e8f0");
+    this.ctx.fillStyle = bgGradient;
     this.ctx.fillRect(-barWidth/2, statsY, barWidth, barHeight);
 
-    // Positive opinion segment
+    // Positive opinion segment with gradient
     if (positiveCount > 0) {
       const positiveWidth = (positiveCount / total) * barWidth;
-      this.ctx.fillStyle = this.colors[1];
+      const posGradient = this.ctx.createLinearGradient(-barWidth/2, statsY, -barWidth/2, statsY + barHeight);
+      posGradient.addColorStop(0, this.colors[1]);
+      posGradient.addColorStop(1, "#c2185b");
+      this.ctx.fillStyle = posGradient;
       this.ctx.fillRect(-barWidth/2, statsY, positiveWidth, barHeight);
     }
 
-    // Negative opinion segment
+    // Negative opinion segment with gradient
     if (negativeCount > 0) {
       const negativeWidth = (negativeCount / total) * barWidth;
       const negativeStart = -barWidth/2 + (positiveCount / total) * barWidth;
-      this.ctx.fillStyle = this.colors[-1];
+      const negGradient = this.ctx.createLinearGradient(negativeStart, statsY, negativeStart, statsY + barHeight);
+      negGradient.addColorStop(0, this.colors[-1]);
+      negGradient.addColorStop(1, "#1976d2");
+      this.ctx.fillStyle = negGradient;
       this.ctx.fillRect(negativeStart, statsY, negativeWidth, barHeight);
     }
 
-    // Border
-    this.ctx.strokeStyle = "#ccc";
-    this.ctx.lineWidth = 1;
+    // Enhanced border
+    this.ctx.strokeStyle = "#94a3b8";
+    this.ctx.lineWidth = 2;
     this.ctx.strokeRect(-barWidth/2, statsY, barWidth, barHeight);
 
-    // Count labels - very compact
-    const fontSize = Math.max(8, Math.min(12, this.groupRadius * 0.12));
-    this.ctx.font = `${fontSize}px Arial`;
+    // Count labels - larger and more readable
+    const fontSize = Math.max(10, Math.min(14, this.groupRadius * 0.14));
+    this.ctx.font = `bold ${fontSize}px Arial`;
     this.ctx.textAlign = "center";
-    this.ctx.fillStyle = "#333";
+    this.ctx.fillStyle = "#1e293b";
     
-    const labelY = statsY - fontSize * 0.1;
+    const labelY = statsY - fontSize * 0.5;
     this.ctx.fillText(`+1: ${positiveCount} | -1: ${negativeCount}`, 0, labelY);
   }
 
@@ -313,13 +341,20 @@ export class CanvasVisualizer extends Visualizer {
    * @param {Group} group - The club to draw label for.
    */
   drawGroupLabel(group) {
-    const fontSize = Math.max(10, Math.min(14, this.groupRadius * 0.15));
-    this.ctx.font = `bold ${fontSize}px Arial`;
+    const fontSize = Math.max(12, Math.min(18, this.groupRadius * 0.18));
+    this.ctx.font = `bold ${fontSize}px Inter, Arial, sans-serif`;
     this.ctx.textAlign = "center";
-    this.ctx.fillStyle = "#333";
     
-    const labelY = this.groupRadius + fontSize * 1.0;
-    this.ctx.fillText(`Club ${group.id}`, 0, labelY);
+    const labelY = this.groupRadius + fontSize * 1.5;
+    const text = `Club ${group.id}`;
+    
+    // Draw text shadow for better visibility
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+    this.ctx.fillText(text, 1, labelY + 1);
+    
+    // Draw main text
+    this.ctx.fillStyle = "#1e293b";
+    this.ctx.fillText(text, 0, labelY);
   }
 
   /**
@@ -340,18 +375,25 @@ export class CanvasVisualizer extends Visualizer {
     const opinion = person.getOpinion();
     const color = this.colors[opinion] || "#888";
 
-    // Larger, more visible dots
-    const dotRadius = Math.max(4, Math.min(8, this.groupRadius * 0.1));
+    // Much larger, more visible dots - scale with group size
+    const dotRadius = Math.max(6, Math.min(12, this.groupRadius * 0.12));
     
-    // Draw person dot with shadow for better visibility
+    // Draw person dot with enhanced visibility
     this.ctx.beginPath();
     this.ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
     this.ctx.fillStyle = color;
     this.ctx.fill();
     
-    // Stronger white border for better contrast
+    // Strong white border with subtle shadow effect
     this.ctx.strokeStyle = "#fff";
-    this.ctx.lineWidth = Math.max(1, dotRadius * 0.2);
+    this.ctx.lineWidth = Math.max(2, dotRadius * 0.25);
+    this.ctx.stroke();
+    
+    // Add subtle inner shadow for depth
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, dotRadius * 0.8, 0, Math.PI * 2);
+    this.ctx.strokeStyle = "rgba(0,0,0,0.2)";
+    this.ctx.lineWidth = 1;
     this.ctx.stroke();
   }
 
