@@ -9,6 +9,8 @@ import { GraphInitializer } from "../simulation/GraphInitializer.js";
 import { Simulator } from "../simulation/Simulator.js";
 import { Tester } from "../simulation/Tester.js";
 import { CanvasVisualizer } from "./CanvasVisualizer.js";
+import { DistributionAnalyzer } from "../analysis/DistributionAnalyzer.js";
+import { DistributionChart } from "./DistributionChart.js";
 
 /**
  * Main dashboard controller for the Random Intersection Graph simulation.
@@ -26,6 +28,10 @@ export class Dashboard {
     this.graphInitializer = null;
     this.simulator = null;
     this.tester = null;
+    
+    // Analysis components
+    this.distributionAnalyzer = null;
+    this.distributionChart = null;
     
     // Data
     this.people = [];
@@ -93,6 +99,9 @@ export class Dashboard {
       
       // Initial parameter display update
       this.updateParameterDisplay();
+      
+      // Setup distribution analysis
+      this.setupDistributionAnalysis();
       
       console.log("UI controls set up successfully");
       
@@ -185,6 +194,33 @@ export class Dashboard {
   }
 
   /**
+   * Sets up distribution analysis components.
+   */
+  setupDistributionAnalysis() {
+    // Find or create distribution analysis container
+    let analysisContainer = document.getElementById('distributionAnalysisContainer');
+    
+    if (!analysisContainer) {
+      // Create the container in the visualization info section
+      const visualizationInfo = document.querySelector('.visualization-info');
+      if (visualizationInfo) {
+        analysisContainer = document.createElement('div');
+        analysisContainer.id = 'distributionAnalysisContainer';
+        analysisContainer.className = 'distribution-analysis-container';
+        visualizationInfo.appendChild(analysisContainer);
+      } else {
+        console.warn("Could not find visualization info container for distribution analysis");
+        return;
+      }
+    }
+
+    // Initialize distribution chart
+    this.distributionChart = new DistributionChart(analysisContainer);
+    
+    console.log("Distribution analysis setup complete");
+  }
+
+  /**
    * Handles homogeneous/non-homogeneous toggle.
    */
   onHomogeneousToggle() {
@@ -229,6 +265,14 @@ export class Dashboard {
       
       // Create simulator
       this.simulator = new Simulator(this.people, this.groups, this.config);
+      
+      // Initialize distribution analyzer
+      this.distributionAnalyzer = new DistributionAnalyzer(this.config);
+      
+      // Reset distribution chart if it exists
+      if (this.distributionChart) {
+        this.distributionChart.clear();
+      }
       
       // Initialize tester if debugging is enabled
       if (this.config.enableStatistics) {
@@ -414,6 +458,18 @@ export class Dashboard {
     try {
       const results = this.simulator.takeTurn();
       this.currentTurn = results.turn;
+      
+      // Record distribution data for analysis
+      if (this.distributionAnalyzer) {
+        const opinionDistribution = this.simulator.getOpinionDistribution();
+        this.distributionAnalyzer.recordEmpirical(opinionDistribution, this.currentTurn);
+        
+        // Update distribution chart if available
+        if (this.distributionChart) {
+          const analysis = this.distributionAnalyzer.getAnalysis();
+          this.distributionChart.updateAnalysis(analysis);
+        }
+      }
       
       // Update visualization
       if (this.visualizer) {

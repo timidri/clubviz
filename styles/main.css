@@ -780,3 +780,213 @@ body {
   height: 4px;
   background: linear-gradient(90deg, var(--primary-600), var(--primary-700));
 }
+
+/* === Distribution Analysis Styles === */
+.distribution-analysis-container {
+  margin-top: 2rem;
+  border-top: 2px solid var(--gray-200);
+  padding-top: 1.5rem;
+}
+
+.distribution-analysis {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--gray-200);
+}
+
+.analysis-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--primary-100);
+}
+
+.analysis-header h4 {
+  color: var(--gray-900);
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.analysis-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.analysis-controls .btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.distribution-comparison {
+  margin-bottom: 1.5rem;
+}
+
+.comparison-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.chart-section {
+  background: var(--gray-50);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+}
+
+.chart-section h5 {
+  color: var(--gray-700);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  text-align: center;
+}
+
+.chart-section canvas {
+  display: block;
+  margin: 0 auto;
+  border-radius: var(--radius-sm);
+}
+
+.convergence-timeline {
+  background: var(--gray-50);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+}
+
+.convergence-timeline h5 {
+  color: var(--gray-700);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  text-align: center;
+}
+
+.analysis-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.summary-section {
+  background: var(--gray-50);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+}
+
+.summary-section h5 {
+  color: var(--gray-700);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  border-bottom: 1px solid var(--gray-300);
+  padding-bottom: 0.375rem;
+}
+
+.info-content {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--gray-600);
+}
+
+.info-content .description {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--gray-700);
+}
+
+.info-content .pattern,
+.info-content .convergence-type {
+  margin-bottom: 0.375rem;
+}
+
+.theoretical-proportions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.proportion-item {
+  background: var(--primary-100);
+  color: var(--primary-700);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 0.6875rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-300);
+}
+
+.status-indicator.converged {
+  background: var(--success-50, #f0fdf4);
+  border-color: var(--success-300, #86efac);
+}
+
+.status-indicator.stable {
+  background: var(--primary-50);
+  border-color: var(--primary-300);
+}
+
+.status-indicator.evolving {
+  background: var(--warning-50, #fffbeb);
+  border-color: var(--warning-300, #fcd34d);
+}
+
+.status-icon {
+  font-size: 1rem;
+}
+
+.status-text {
+  font-weight: 600;
+  color: var(--gray-700);
+  font-size: 0.75rem;
+}
+
+#recommendationsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#recommendationsList li {
+  padding: 0.375rem 0;
+  border-bottom: 1px solid var(--gray-200);
+  font-size: 0.6875rem;
+}
+
+#recommendationsList li:last-child {
+  border-bottom: none;
+}
+
+.no-recommendations {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 1400px) {
+  .comparison-charts {
+    grid-template-columns: 1fr;
+  }
+  
+  .analysis-summary {
+    grid-template-columns: 1fr;
+  }
+}
