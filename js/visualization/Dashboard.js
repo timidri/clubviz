@@ -483,7 +483,9 @@ export class Dashboard {
       // Check for convergence
       if (this.simulator.convergenceReached) {
         this.stopContinuousRun();
-        this.showMessage("Simulation has converged!");
+        const stats = this.simulator.getStatistics();
+        const convergenceInfo = `The simulation has reached a stable state after ${this.currentTurn} turns. The system has converged to its stationary distribution.`;
+        this.showMessage(convergenceInfo, "🎯 Convergence Achieved!");
       }
       
       console.log(`Turn ${this.currentTurn} completed`);
@@ -720,19 +722,72 @@ export class Dashboard {
   }
 
   /**
-   * Shows a single error message.
+   * Shows a single error message using the professional modal overlay.
    */
   showError(message) {
     console.error(message);
-    alert(message); // Simple fallback
+    this.showMessage(message, "⚠️ Error");
   }
 
   /**
-   * Shows an informational message.
+   * Shows an informational message using the professional modal overlay.
    */
-  showMessage(message) {
+  showMessage(message, title = "ℹ️ Information") {
     console.log(message);
-    alert(message); // Simple fallback
+    
+    const overlay = document.getElementById('messageOverlay');
+    const titleElement = document.getElementById('messageTitle');
+    const textElement = document.getElementById('messageText');
+    const closeButton = document.getElementById('messageClose');
+    
+    if (overlay && titleElement && textElement && closeButton) {
+      titleElement.textContent = title;
+      textElement.textContent = message;
+      
+      // Style the close button based on message type
+      closeButton.className = 'btn btn-primary';
+      if (title.includes('⚠️') || title.includes('Error')) {
+        closeButton.className = 'btn btn-danger';
+      } else if (title.includes('🎯') || title.includes('Success') || title.includes('Convergence')) {
+        closeButton.className = 'btn btn-success';
+      }
+      
+      overlay.style.display = 'flex';
+      
+      // Set up close handler
+      const closeHandler = () => {
+        overlay.style.display = 'none';
+        overlay.style.animation = '';
+        closeButton.removeEventListener('click', closeHandler);
+        overlay.removeEventListener('click', outsideClickHandler);
+        document.removeEventListener('keydown', keyHandler);
+      };
+      
+      // Close when clicking the button
+      closeButton.addEventListener('click', closeHandler);
+      
+      // Close when clicking outside the modal
+      const outsideClickHandler = (e) => {
+        if (e.target === overlay) {
+          closeHandler();
+        }
+      };
+      overlay.addEventListener('click', outsideClickHandler);
+      
+      // Close on Escape key
+      const keyHandler = (e) => {
+        if (e.key === 'Escape') {
+          closeHandler();
+        }
+      };
+      document.addEventListener('keydown', keyHandler);
+      
+      // Auto-focus the close button for accessibility
+      setTimeout(() => closeButton.focus(), 100);
+    } else {
+      // Fallback to alert if modal elements not found
+      alert(message);
+    }
   }
 
   /**
