@@ -31,9 +31,16 @@ export class UIManager {
       radio.checked = value === this.dashboard.config.modelType;
       radio.addEventListener('change', () => this.dashboard.onModelTypeChange(value));
       
-      const text = this.createDOMElement('span', '', {}, this.formatModelName(key));
+      const modelName = this.formatModelName(key);
+      const modelDescription = MODEL_DESCRIPTIONS[value] || 'No description available for this model.';
+
+      const text = this.createDOMElement('span', '', {}, modelName);
+      const helpIcon = this.createDOMElement('span', 'help-icon', {'data-tooltip': modelDescription}, '?');
       
-      label.append(radio, text);
+      const textWrapper = this.createDOMElement('div', 'model-text-wrapper');
+      textWrapper.append(text, helpIcon);
+      
+      label.append(radio, textWrapper);
       modelContainer.appendChild(label);
     });
   }

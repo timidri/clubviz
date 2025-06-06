@@ -104,23 +104,26 @@ export class CanvasVisualizer extends Visualizer {
     const cellWidth = availableWidth / numColumns;
     const cellHeight = availableHeight / numRows;
 
-    // Calculate radius to fit within the cell with a small margin.
-    // This is more aggressive to ensure everything fits.
-    const margin = Math.min(cellWidth, cellHeight) * 0.15; // Increase margin to 15%
-    const maxRadius = (Math.min(cellWidth, cellHeight) / 2) - margin;
-    
-    // Make radius smaller to leave space for external labels.
-    this.groupRadius = Math.max(20, maxRadius * 0.8); // Reduce radius by 20% for label space
+    // Reserve 30% of the vertical cell space for labels below the circle
+    const labelHeight = cellHeight * 0.3;
+    const circleAreaHeight = cellHeight - labelHeight;
 
-    console.log(`Compact Grid: ${numRows}x${numColumns}, Radius: ${this.groupRadius.toFixed(0)}`);
+    // Calculate radius to fit within the available space
+    const margin = Math.min(cellWidth, circleAreaHeight) * 0.1; // 10% margin
+    const maxRadiusFromWidth = cellWidth / 2 - margin;
+    const maxRadiusFromHeight = circleAreaHeight / 2 - margin;
+    this.groupRadius = Math.max(20, Math.min(maxRadiusFromWidth, maxRadiusFromHeight));
 
-    // Position groups in the center of their grid cells
+    console.log(`Smart Grid: ${numRows}x${numColumns}, Radius: ${this.groupRadius.toFixed(0)}`);
+
+    // Position groups, centering the circle in the top part of the cell
     this.groups.forEach((group, i) => {
         const row = Math.floor(i / numColumns);
         const col = i % numColumns;
         
+        // Center the circle in the allocated top 70% of the cell
         const x = padding + (col + 0.5) * cellWidth;
-        const y = padding + (row + 0.5) * cellHeight;
+        const y = padding + (row * cellHeight) + (circleAreaHeight / 2);
         
         this.groupPositions.set(group.id, { x, y });
     });
@@ -290,14 +293,15 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.font = `${statsFontSize}px Inter, sans-serif`;
     this.ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     this.ctx.textAlign = "center";
-    this.ctx.textBaseline = "top"; // Align text to the top
+    this.ctx.textBaseline = "top";
 
-    // Position text below the circle
-    const textY = pos.y + this.groupRadius + (statsFontSize * 1.5);
+    // Position text below the circle, accounting for the label
+    const labelFontSize = Math.max(14, Math.min(22, this.groupRadius * 0.3));
+    const textY = pos.y + this.groupRadius + (labelFontSize * 1.2);
     const lineHeight = statsFontSize * 1.4;
 
-    this.ctx.fillText(`Members: ${stats.memberCount}`, pos.x, textY + lineHeight);
-    this.ctx.fillText(`+1: ${stats.opinionCounts.positive} | -1: ${stats.opinionCounts.negative}`, pos.x, textY + (lineHeight * 2));
+    this.ctx.fillText(`Members: ${stats.memberCount}`, pos.x, textY);
+    this.ctx.fillText(`+1: ${stats.opinionCounts.positive} | -1: ${stats.opinionCounts.negative}`, pos.x, textY + lineHeight);
   }
 
   /**
@@ -312,10 +316,10 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.font = `bold ${labelFontSize}px Inter, sans-serif`;
     this.ctx.fillStyle = "#374151";
     this.ctx.textAlign = "center";
-    this.ctx.textBaseline = "top"; // Align text to the top for consistent positioning
+    this.ctx.textBaseline = "top";
 
-    // Position text below the circle
-    const textY = pos.y + this.groupRadius + (labelFontSize * 0.5);
+    // Position text just below the circle
+    const textY = pos.y + this.groupRadius + (labelFontSize * 0.2);
     
     this.ctx.fillText(`Club ${group.id}`, pos.x, textY);
   }

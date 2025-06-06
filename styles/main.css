@@ -178,6 +178,13 @@ body {
   box-shadow: 0 0 0 3px var(--primary-100);
 }
 
+.model-text-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 .model-description {
   margin-top: 0.75rem;
   padding: 0.75rem;
