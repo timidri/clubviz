@@ -785,8 +785,8 @@ export class Dashboard {
       // Auto-focus the close button for accessibility
       setTimeout(() => closeButton.focus(), 100);
     } else {
-      // Fallback to alert if modal elements not found
-      alert(message);
+      // Fallback to console log if modal elements not found
+      console.log(`Modal fallback: ${title} - ${message}`);
     }
   }
 

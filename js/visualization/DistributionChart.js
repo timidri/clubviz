@@ -413,7 +413,7 @@ export class DistributionChart {
    */
   exportAnalysis() {
     if (!this.analysisData) {
-      alert('No analysis data to export');
+      console.log('No analysis data to export');
       return;
     }
 

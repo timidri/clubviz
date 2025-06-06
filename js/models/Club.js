@@ -131,6 +131,17 @@ export class Group {
   }
 
   /**
+   * Gets the opinion counts for both positive and negative opinions.
+   * @returns {object} Object with positive and negative counts
+   */
+  getOpinionCounts() {
+    return {
+      positive: this.getOpinionCount(1),
+      negative: this.getOpinionCount(-1)
+    };
+  }
+
+  /**
    * Calculates the Schelling model edge deletion rate for a person.
    * Based on the paper's formula: β(aᵢ, k⁺ⱼ(t), k⁻ⱼ(t))
    * Higher deletion rate when person's opinion disagrees with club majority.
