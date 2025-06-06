@@ -179,8 +179,18 @@ export class UIManager {
 
   createDOMElement(tag, className, props = {}, textContent = '') {
     const el = document.createElement(tag);
-    el.className = className;
-    Object.assign(el, props);
+    if (className) {
+      className.split(' ').forEach(c => el.classList.add(c));
+    }
+    
+    for (const [key, value] of Object.entries(props)) {
+      if (key.startsWith('data-')) {
+        el.setAttribute(key, value);
+      } else {
+        el[key] = value;
+      }
+    }
+    
     if(textContent) el.textContent = textContent;
     return el;
   }
