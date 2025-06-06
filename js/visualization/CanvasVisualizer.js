@@ -71,7 +71,7 @@ export class CanvasVisualizer extends Visualizer {
   }
 
   /**
-   * Calculates optimal positions for clubs in a much more compact, centered layout.
+   * Calculates optimal positions for clubs using MAXIMUM available space.
    */
   calculateGroupPositions() {
     const numGroups = this.groups.length;
@@ -79,14 +79,23 @@ export class CanvasVisualizer extends Visualizer {
     
     console.log(`Canvas size: ${this.width}x${this.height}`);
     
-    // More compact grid arrangements with better aspect ratios
+    // AGGRESSIVE grid arrangements - maximize space usage
     let numColumns, numRows;
     if (numGroups === 1) { 
       numColumns = 1; numRows = 1; 
     } else if (numGroups === 2) { 
-      numColumns = 2; numRows = 1; 
+      // For 2 clubs, choose layout based on canvas aspect ratio
+      if (this.width > this.height * 1.3) {
+        numColumns = 2; numRows = 1; // Wide canvas - horizontal layout
+      } else {
+        numColumns = 1; numRows = 2; // Tall canvas - vertical layout
+      }
     } else if (numGroups === 3) { 
-      numColumns = 3; numRows = 1; 
+      if (this.width > this.height * 1.5) {
+        numColumns = 3; numRows = 1; // Very wide - horizontal
+      } else {
+        numColumns = 2; numRows = 2; // Use 2x2 grid, leave one empty
+      }
     } else if (numGroups === 4) { 
       numColumns = 2; numRows = 2; 
     } else if (numGroups <= 6) {
@@ -98,21 +107,23 @@ export class CanvasVisualizer extends Visualizer {
       numRows = Math.ceil(numGroups / numColumns);
     }
 
-    // Much more generous sizing
-    const padding = Math.min(40, this.width * 0.05);
+    // MINIMAL padding - use almost all available space
+    const padding = Math.max(10, Math.min(20, this.width * 0.02));
     const availableWidth = this.width - padding * 2;
     const availableHeight = this.height - padding * 2;
     
-    // Calculate cell dimensions with minimal spacing
+    // Calculate cell dimensions
     const cellWidth = availableWidth / numColumns;
     const cellHeight = availableHeight / numRows;
     
-    // Much larger radius calculation - use most of available space
-    const maxRadiusFromWidth = cellWidth * 0.35;  // Use 35% of cell width
-    const maxRadiusFromHeight = cellHeight * 0.35; // Use 35% of cell height
-    this.groupRadius = Math.max(60, Math.min(maxRadiusFromWidth, maxRadiusFromHeight, 120));
+    // MAXIMUM radius calculation - use 50-60% of available cell space!
+    const maxRadiusFromWidth = cellWidth * 0.48;  // Use 48% of cell width
+    const maxRadiusFromHeight = cellHeight * 0.48; // Use 48% of cell height
+    
+    // Allow much larger circles - up to 200px!
+    this.groupRadius = Math.max(80, Math.min(maxRadiusFromWidth, maxRadiusFromHeight, 200));
 
-    console.log(`Grid: ${numRows}x${numColumns}, Cell: ${cellWidth.toFixed(0)}x${cellHeight.toFixed(0)}, Radius: ${this.groupRadius}`);
+    console.log(`AGGRESSIVE Grid: ${numRows}x${numColumns}, Cell: ${cellWidth.toFixed(0)}x${cellHeight.toFixed(0)}, Radius: ${this.groupRadius}`);
 
     // Center the entire grid layout in the canvas
     const totalGridWidth = numColumns * cellWidth;
@@ -120,21 +131,21 @@ export class CanvasVisualizer extends Visualizer {
     const gridOffsetX = (this.width - totalGridWidth) / 2;
     const gridOffsetY = (this.height - totalGridHeight) / 2;
 
-    // Position groups in a centered, compact grid
+    // Position groups to maximize space usage
     this.groups.forEach((group, i) => {
       const row = Math.floor(i / numColumns);
       const col = i % numColumns;
       
-      // Center each club within its cell, with grid centered on canvas
+      // Center each club within its cell
       const x = gridOffsetX + cellWidth * col + cellWidth * 0.5;
       const y = gridOffsetY + cellHeight * row + cellHeight * 0.5;
       
       this.groupPositions.set(group.id, { x, y });
       
-      console.log(`Club ${group.id}: position (${x.toFixed(0)}, ${y.toFixed(0)})`);
+      console.log(`Club ${group.id}: LARGE position (${x.toFixed(0)}, ${y.toFixed(0)}), radius=${this.groupRadius}`);
     });
 
-    console.log(`Positioned ${numGroups} clubs in centered ${numRows}x${numColumns} grid, radius=${this.groupRadius}px`);
+    console.log(`MAXIMIZED ${numGroups} clubs in ${numRows}x${numColumns} grid, LARGE radius=${this.groupRadius}px`);
   }
 
   /**
@@ -160,7 +171,7 @@ export class CanvasVisualizer extends Visualizer {
   }
 
   /**
-   * Updates canvas size and handles DPI scaling.
+   * Updates canvas size and handles DPI scaling - MAXIMIZE available space.
    */
   updateCanvasSize() {
     const wrapper = this.canvas.parentElement;
@@ -172,9 +183,9 @@ export class CanvasVisualizer extends Visualizer {
     const rect = wrapper.getBoundingClientRect();
     console.log(`Canvas wrapper size: ${rect.width}x${rect.height}`);
     
-    // Ensure minimum reasonable size
-    const width = Math.max(400, rect.width);
-    const height = Math.max(300, rect.height);
+    // AGGRESSIVE sizing - use ALL available space, larger minimums
+    const width = Math.max(600, rect.width);  // Increased minimum width
+    const height = Math.max(500, rect.height); // Increased minimum height
     
     const dpr = window.devicePixelRatio || 1;
     
@@ -190,7 +201,7 @@ export class CanvasVisualizer extends Visualizer {
     this.height = height;
     this.minDimension = Math.min(this.width, this.height);
     
-    console.log(`Canvas updated: ${this.width}x${this.height}, DPR: ${dpr}`);
+    console.log(`Canvas MAXIMIZED: ${this.width}x${this.height}, DPR: ${dpr}`);
   }
 
   /**
@@ -289,9 +300,9 @@ export class CanvasVisualizer extends Visualizer {
 
     if (total === 0) return;
 
-    const barWidth = this.groupRadius * 1.4;
-    const barHeight = Math.max(12, this.groupRadius * 0.15);
-    const statsY = -this.groupRadius - barHeight * 2;
+    const barWidth = this.groupRadius * 1.8; // Much wider bars
+    const barHeight = Math.max(18, this.groupRadius * 0.20); // Much taller bars  
+    const statsY = -this.groupRadius - barHeight * 2.5; // More space above
 
     // Background with gradient
     const bgGradient = this.ctx.createLinearGradient(-barWidth/2, statsY, -barWidth/2, statsY + barHeight);
@@ -326,14 +337,21 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.lineWidth = 2;
     this.ctx.strokeRect(-barWidth/2, statsY, barWidth, barHeight);
 
-    // Count labels - larger and more readable
-    const fontSize = Math.max(10, Math.min(14, this.groupRadius * 0.14));
-    this.ctx.font = `bold ${fontSize}px Arial`;
+    // Count labels - MUCH larger and more prominent
+    const fontSize = Math.max(14, Math.min(20, this.groupRadius * 0.18));
+    this.ctx.font = `bold ${fontSize}px Inter, Arial, sans-serif`;
     this.ctx.textAlign = "center";
-    this.ctx.fillStyle = "#1e293b";
     
-    const labelY = statsY - fontSize * 0.5;
-    this.ctx.fillText(`+1: ${positiveCount} | -1: ${negativeCount}`, 0, labelY);
+    const labelY = statsY - fontSize * 0.8;
+    const text = `+1: ${positiveCount} | -1: ${negativeCount}`;
+    
+    // Text shadow for better visibility
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+    this.ctx.fillText(text, 1, labelY + 1);
+    
+    // Main text
+    this.ctx.fillStyle = "#1e293b";
+    this.ctx.fillText(text, 0, labelY);
   }
 
   /**
@@ -341,11 +359,11 @@ export class CanvasVisualizer extends Visualizer {
    * @param {Group} group - The club to draw label for.
    */
   drawGroupLabel(group) {
-    const fontSize = Math.max(12, Math.min(18, this.groupRadius * 0.18));
+    const fontSize = Math.max(16, Math.min(24, this.groupRadius * 0.22)); // Much larger labels
     this.ctx.font = `bold ${fontSize}px Inter, Arial, sans-serif`;
     this.ctx.textAlign = "center";
     
-    const labelY = this.groupRadius + fontSize * 1.5;
+    const labelY = this.groupRadius + fontSize * 1.8;
     const text = `Club ${group.id}`;
     
     // Draw text shadow for better visibility
@@ -358,7 +376,7 @@ export class CanvasVisualizer extends Visualizer {
   }
 
   /**
-   * Draws a person as a colored dot within a group.
+   * Draws a person as a LARGE, highly visible colored dot within a group.
    * @param {Group} group - The group containing the person.
    * @param {Person} person - The person to draw.
    */
@@ -375,26 +393,42 @@ export class CanvasVisualizer extends Visualizer {
     const opinion = person.getOpinion();
     const color = this.colors[opinion] || "#888";
 
-    // Much larger, more visible dots - scale with group size
-    const dotRadius = Math.max(6, Math.min(12, this.groupRadius * 0.12));
+    // MUCH LARGER dots - scale aggressively with group size (up to 20px!)
+    const dotRadius = Math.max(8, Math.min(20, this.groupRadius * 0.15));
     
-    // Draw person dot with enhanced visibility
+    // Draw outer glow effect for maximum visibility
     this.ctx.beginPath();
-    this.ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
-    this.ctx.fillStyle = color;
+    this.ctx.arc(x, y, dotRadius + 3, 0, Math.PI * 2);
+    this.ctx.fillStyle = color.replace(')', ', 0.3)').replace('rgb', 'rgba');
     this.ctx.fill();
     
-    // Strong white border with subtle shadow effect
+    // Draw main person dot with gradient
+    const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, dotRadius);
+    gradient.addColorStop(0, color);
+    gradient.addColorStop(1, color.replace(')', ', 0.8)').replace('rgb', 'rgba'));
+    
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+    this.ctx.fillStyle = gradient;
+    this.ctx.fill();
+    
+    // Very thick white border for maximum contrast
     this.ctx.strokeStyle = "#fff";
-    this.ctx.lineWidth = Math.max(2, dotRadius * 0.25);
+    this.ctx.lineWidth = Math.max(3, dotRadius * 0.3);
     this.ctx.stroke();
     
-    // Add subtle inner shadow for depth
+    // Add dark outline for even better definition
     this.ctx.beginPath();
-    this.ctx.arc(x, y, dotRadius * 0.8, 0, Math.PI * 2);
-    this.ctx.strokeStyle = "rgba(0,0,0,0.2)";
+    this.ctx.arc(x, y, dotRadius + this.ctx.lineWidth/2, 0, Math.PI * 2);
+    this.ctx.strokeStyle = "rgba(0,0,0,0.4)";
     this.ctx.lineWidth = 1;
     this.ctx.stroke();
+    
+    // Add subtle highlight for 3D effect
+    this.ctx.beginPath();
+    this.ctx.arc(x - dotRadius * 0.3, y - dotRadius * 0.3, dotRadius * 0.4, 0, Math.PI * 2);
+    this.ctx.fillStyle = "rgba(255,255,255,0.6)";
+    this.ctx.fill();
   }
 
   /**
