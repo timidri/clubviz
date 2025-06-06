@@ -79,25 +79,21 @@ export class CanvasVisualizer extends Visualizer {
     
     console.log(`Canvas size: ${this.width}x${this.height}`);
     
-    // AGGRESSIVE grid arrangements - maximize space usage
+    // ULTRA-COMPACT grid arrangements - prioritize fitting on screen
     let numColumns, numRows;
     if (numGroups === 1) { 
       numColumns = 1; numRows = 1; 
     } else if (numGroups === 2) { 
-      // For 2 clubs, choose layout based on canvas aspect ratio
-      if (this.width > this.height * 1.3) {
-        numColumns = 2; numRows = 1; // Wide canvas - horizontal layout
-      } else {
-        numColumns = 1; numRows = 2; // Tall canvas - vertical layout
-      }
+      numColumns = 2; numRows = 1; // Always horizontal for 2 clubs
     } else if (numGroups === 3) { 
-      if (this.width > this.height * 1.5) {
-        numColumns = 3; numRows = 1; // Very wide - horizontal
-      } else {
-        numColumns = 2; numRows = 2; // Use 2x2 grid, leave one empty
-      }
+      numColumns = 3; numRows = 1; // Always horizontal for 3 clubs
     } else if (numGroups === 4) { 
-      numColumns = 2; numRows = 2; 
+      // For 4 clubs, use horizontal layout to fit better on wide screens
+      if (this.width > this.height * 1.2) {
+        numColumns = 4; numRows = 1; // Ultra-wide horizontal layout
+      } else {
+        numColumns = 2; numRows = 2; // Compact 2x2
+      }
     } else if (numGroups <= 6) {
       numColumns = 3; numRows = 2;
     } else if (numGroups <= 9) {
@@ -107,21 +103,21 @@ export class CanvasVisualizer extends Visualizer {
       numRows = Math.ceil(numGroups / numColumns);
     }
 
-    // MINIMAL padding - use almost all available space
-    const padding = Math.max(10, Math.min(20, this.width * 0.02));
+    // ULTRA-MINIMAL padding - use almost all space
+    const padding = Math.max(5, this.width * 0.01); // Reduced from 2% to 1%
     const availableWidth = this.width - padding * 2;
     const availableHeight = this.height - padding * 2;
     
-    // Calculate cell dimensions
+    // Calculate cell dimensions with overlap allowance
     const cellWidth = availableWidth / numColumns;
     const cellHeight = availableHeight / numRows;
     
-    // MAXIMUM radius calculation - use 50-60% of available cell space!
-    const maxRadiusFromWidth = cellWidth * 0.48;  // Use 48% of cell width
-    const maxRadiusFromHeight = cellHeight * 0.48; // Use 48% of cell height
+    // COMPACT radius calculation - prioritize fitting on screen
+    const maxRadiusFromWidth = cellWidth * 0.4;   // Reduced from 48% to 40%
+    const maxRadiusFromHeight = cellHeight * 0.4; // Reduced from 48% to 40%
     
-    // Allow much larger circles - up to 200px!
-    this.groupRadius = Math.max(80, Math.min(maxRadiusFromWidth, maxRadiusFromHeight, 200));
+    // Still allow large circles but prioritize screen fit
+    this.groupRadius = Math.max(60, Math.min(maxRadiusFromWidth, maxRadiusFromHeight, 150)); // Reduced max from 200 to 150
 
     console.log(`AGGRESSIVE Grid: ${numRows}x${numColumns}, Cell: ${cellWidth.toFixed(0)}x${cellHeight.toFixed(0)}, Radius: ${this.groupRadius}`);
 
@@ -183,9 +179,9 @@ export class CanvasVisualizer extends Visualizer {
     const rect = wrapper.getBoundingClientRect();
     console.log(`Canvas wrapper size: ${rect.width}x${rect.height}`);
     
-    // AGGRESSIVE sizing - use ALL available space, larger minimums
-    const width = Math.max(600, rect.width);  // Increased minimum width
-    const height = Math.max(500, rect.height); // Increased minimum height
+    // COMPACT sizing - fit on screen while still being visible
+    const width = Math.max(480, rect.width);  // Reduced minimum for better screen fit
+    const height = Math.max(360, rect.height); // Reduced minimum for better screen fit
     
     const dpr = window.devicePixelRatio || 1;
     
@@ -300,9 +296,9 @@ export class CanvasVisualizer extends Visualizer {
 
     if (total === 0) return;
 
-    const barWidth = this.groupRadius * 1.8; // Much wider bars
-    const barHeight = Math.max(18, this.groupRadius * 0.20); // Much taller bars  
-    const statsY = -this.groupRadius - barHeight * 2.5; // More space above
+    const barWidth = this.groupRadius * 1.6; // Slightly narrower for compactness
+    const barHeight = Math.max(16, this.groupRadius * 0.18); // Slightly shorter
+    const statsY = -this.groupRadius - barHeight * 1.8; // Less space above for compactness
 
     // Background with gradient
     const bgGradient = this.ctx.createLinearGradient(-barWidth/2, statsY, -barWidth/2, statsY + barHeight);
@@ -363,7 +359,7 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.font = `bold ${fontSize}px Inter, Arial, sans-serif`;
     this.ctx.textAlign = "center";
     
-    const labelY = this.groupRadius + fontSize * 1.8;
+    const labelY = this.groupRadius + fontSize * 1.4; // Reduced spacing for compactness
     const text = `Club ${group.id}`;
     
     // Draw text shadow for better visibility
