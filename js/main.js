@@ -13,6 +13,7 @@
  */
 
 import { Dashboard } from './visualization/Dashboard.js';
+import { PerformanceTest } from './utils/PerformanceTest.js';
 
 /**
  * Global application state
@@ -117,6 +118,7 @@ async function initializeApp() {
     // Store dashboard reference globally for debugging and console access
     window.dashboard = dashboard;
     window.performanceMonitor = performanceMonitor;
+    window.performanceTest = new PerformanceTest();
     
     // Record performance metrics
     performanceMonitor.recordLoadTime();
@@ -273,7 +275,10 @@ window.debug = {
     const duration = performance.now() - start;
     console.log(`Benchmark: ${turns} turns in ${duration.toFixed(2)}ms (${(duration/turns).toFixed(2)}ms per turn)`);
     return { turns, duration, avgPerTurn: duration/turns };
-  }
+  },
+  runFullBenchmark: (options) => window.performanceTest?.runBenchmark(dashboard, options),
+  profile: (name, fn) => window.performanceTest?.profile(name, fn),
+  exportBenchmarkResults: () => window.performanceTest?.exportResults()
 };
 
 // Initialize the application when DOM is ready
