@@ -776,41 +776,41 @@ body {
 .help-icon::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: 125%;
+  bottom: 140%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(10px);
   background-color: var(--gray-800);
   color: white;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.5;
   width: 280px;
-  max-width: calc(var(--sidebar-width) - 3rem);
   text-align: left;
   visibility: hidden;
   opacity: 0;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 1001;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  z-index: 100;
+  pointer-events: none;
   box-shadow: var(--shadow-lg);
-  transform: translateX(-50%) translateY(-10px);
 }
 
 .help-icon::before {
   content: '';
   position: absolute;
-  bottom: calc(125% - 5px);
+  bottom: calc(140% - 5px);
   left: 50%;
   transform: translateX(-50%);
   border-width: 5px;
   border-style: solid;
   border-color: var(--gray-800) transparent transparent transparent;
+  border-top-color: var(--gray-800);
   visibility: hidden;
   opacity: 0;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 1002;
-  transform: translateX(-50%) translateY(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  z-index: 101;
+  pointer-events: none;
 }
 
 /* === Enhanced Sidebar Visibility === */
