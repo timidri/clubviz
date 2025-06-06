@@ -103,21 +103,21 @@ export class CanvasVisualizer extends Visualizer {
       numRows = Math.ceil(numGroups / numColumns);
     }
 
-    // ZERO PADDING - use absolutely ALL space
-    const padding = 5; // Absolute minimum - just 5px border
+    // ABSOLUTELY NO PADDING - use 100% of space
+    const padding = 0; // ZERO padding - use every pixel
     const availableWidth = this.width - padding * 2;
     const availableHeight = this.height - padding * 2;
     
-    // Calculate overlapping cell dimensions - circles can touch/overlap
+    // Calculate overlapping cell dimensions - circles WILL overlap significantly
     const cellWidth = availableWidth / numColumns;
     const cellHeight = availableHeight / numRows;
     
-    // MAXIMUM DENSITY - use 60% of cell space, allow touching/overlapping
-    const maxRadiusFromWidth = cellWidth * 0.55;   // Increased from 40% to 55%
-    const maxRadiusFromHeight = cellHeight * 0.55; // Increased from 40% to 55%
+    // EXTREME DENSITY - use 75% of cell space, encourage heavy overlap
+    const maxRadiusFromWidth = cellWidth * 0.75;   // Massive increase to 75%
+    const maxRadiusFromHeight = cellHeight * 0.75; // Massive increase to 75%
     
-    // Prioritize using available space aggressively  
-    this.groupRadius = Math.max(70, Math.min(maxRadiusFromWidth, maxRadiusFromHeight, 180)); // Increased max to 180
+    // MAXIMUM possible circles - allow very large overlapping circles
+    this.groupRadius = Math.max(90, Math.min(maxRadiusFromWidth, maxRadiusFromHeight, 250)); // Increased max to 250
 
     console.log(`AGGRESSIVE Grid: ${numRows}x${numColumns}, Cell: ${cellWidth.toFixed(0)}x${cellHeight.toFixed(0)}, Radius: ${this.groupRadius}`);
 
@@ -127,18 +127,27 @@ export class CanvasVisualizer extends Visualizer {
     const gridOffsetX = (this.width - totalGridWidth) / 2;
     const gridOffsetY = (this.height - totalGridHeight) / 2;
 
-    // Position groups to maximize space usage
+    // Position groups to OVERLAP and maximize density
     this.groups.forEach((group, i) => {
       const row = Math.floor(i / numColumns);
       const col = i % numColumns;
       
-      // Center each club within its cell
-      const x = gridOffsetX + cellWidth * col + cellWidth * 0.5;
-      const y = gridOffsetY + cellHeight * row + cellHeight * 0.5;
+      // Compress grid spacing - bring circles closer together
+      const compressedCellWidth = cellWidth * 0.8;  // 20% closer horizontally
+      const compressedCellHeight = cellHeight * 0.8; // 20% closer vertically
+      
+      // Center the compressed grid and position clubs closer
+      const compressedGridWidth = numColumns * compressedCellWidth;
+      const compressedGridHeight = numRows * compressedCellHeight;
+      const compressedOffsetX = (this.width - compressedGridWidth) / 2;
+      const compressedOffsetY = (this.height - compressedGridHeight) / 2;
+      
+      const x = compressedOffsetX + compressedCellWidth * col + compressedCellWidth * 0.5;
+      const y = compressedOffsetY + compressedCellHeight * row + compressedCellHeight * 0.5;
       
       this.groupPositions.set(group.id, { x, y });
       
-      console.log(`Club ${group.id}: LARGE position (${x.toFixed(0)}, ${y.toFixed(0)}), radius=${this.groupRadius}`);
+      console.log(`Club ${group.id}: OVERLAPPING position (${x.toFixed(0)}, ${y.toFixed(0)}), radius=${this.groupRadius}`);
     });
 
     console.log(`MAXIMIZED ${numGroups} clubs in ${numRows}x${numColumns} grid, LARGE radius=${this.groupRadius}px`);
@@ -296,9 +305,9 @@ export class CanvasVisualizer extends Visualizer {
 
     if (total === 0) return;
 
-    const barWidth = this.groupRadius * 1.2; // Much narrower - minimize space usage
-    const barHeight = Math.max(12, this.groupRadius * 0.12); // Much shorter bars
-    const statsY = -this.groupRadius - barHeight * 1.2; // Minimal space above
+    const barWidth = this.groupRadius * 1.0; // Extremely narrow - save every pixel
+    const barHeight = Math.max(8, this.groupRadius * 0.08); // Ultra-short bars
+    const statsY = -this.groupRadius - barHeight * 0.8; // Overlapping with circle edge
 
     // Background with gradient
     const bgGradient = this.ctx.createLinearGradient(-barWidth/2, statsY, -barWidth/2, statsY + barHeight);
@@ -333,12 +342,12 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.lineWidth = 2;
     this.ctx.strokeRect(-barWidth/2, statsY, barWidth, barHeight);
 
-    // Count labels - compact size to save space
-    const fontSize = Math.max(10, Math.min(14, this.groupRadius * 0.12)); // Much smaller text
+    // Count labels - ultra-compact to save space
+    const fontSize = Math.max(8, Math.min(11, this.groupRadius * 0.08)); // Ultra-small text
     this.ctx.font = `bold ${fontSize}px Inter, Arial, sans-serif`;
     this.ctx.textAlign = "center";
     
-    const labelY = statsY - fontSize * 0.4; // Minimal spacing
+    const labelY = statsY - fontSize * 0.2; // Nearly touching
     const text = `+1: ${positiveCount} | -1: ${negativeCount}`;
     
     // Text shadow for better visibility
@@ -355,11 +364,11 @@ export class CanvasVisualizer extends Visualizer {
    * @param {Group} group - The club to draw label for.
    */
   drawGroupLabel(group) {
-    const fontSize = Math.max(12, Math.min(18, this.groupRadius * 0.16)); // Smaller labels to save space
+    const fontSize = Math.max(10, Math.min(14, this.groupRadius * 0.12)); // Ultra-compact labels
     this.ctx.font = `bold ${fontSize}px Inter, Arial, sans-serif`;
     this.ctx.textAlign = "center";
     
-    const labelY = this.groupRadius + fontSize * 0.8; // Much tighter spacing
+    const labelY = this.groupRadius + fontSize * 0.5; // Nearly touching circle
     const text = `Club ${group.id}`;
     
     // Draw text shadow for better visibility
