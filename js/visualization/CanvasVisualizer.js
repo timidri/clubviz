@@ -71,54 +71,65 @@ export class CanvasVisualizer extends Visualizer {
   }
 
   /**
-   * Calculates optimal positions for clubs in a very compact grid layout.
+   * Calculates optimal positions for clubs in an extremely compact layout.
    */
   calculateGroupPositions() {
     const numGroups = this.groups.length;
+    if (numGroups === 0) return;
     
-    // Force more compact arrangements
+    console.log(`Canvas size: ${this.width}x${this.height}`);
+    
+    // Extremely compact grid arrangements
     let numColumns, numRows;
-    if (numGroups <= 4) {
-      // Force tighter layouts
-      if (numGroups === 1) { numColumns = 1; numRows = 1; }
-      else if (numGroups === 2) { numColumns = 2; numRows = 1; }
-      else if (numGroups === 3) { numColumns = 3; numRows = 1; }
-      else if (numGroups === 4) { numColumns = 2; numRows = 2; }
+    if (numGroups === 1) { 
+      numColumns = 1; numRows = 1; 
+    } else if (numGroups === 2) { 
+      numColumns = 2; numRows = 1; 
+    } else if (numGroups === 3) { 
+      numColumns = 3; numRows = 1; 
+    } else if (numGroups === 4) { 
+      numColumns = 2; numRows = 2; 
+    } else if (numGroups <= 6) {
+      numColumns = 3; numRows = 2;
+    } else if (numGroups <= 9) {
+      numColumns = 3; numRows = 3;
     } else {
       numColumns = Math.ceil(Math.sqrt(numGroups));
       numRows = Math.ceil(numGroups / numColumns);
     }
 
-    // Minimal padding for maximum space utilization
-    const padding = 20; // Fixed small padding
+    // Minimal padding and spacing
+    const padding = 30;
+    const spacing = 20; // Space between clubs
     const availableWidth = this.width - padding * 2;
     const availableHeight = this.height - padding * 2;
     
+    // Calculate cell dimensions
     const cellWidth = availableWidth / numColumns;
     const cellHeight = availableHeight / numRows;
+    
+    // Aggressive radius calculation for maximum compactness
+    const maxRadiusFromWidth = (cellWidth - spacing) * 0.4;
+    const maxRadiusFromHeight = (cellHeight - spacing) * 0.4;
+    this.groupRadius = Math.max(40, Math.min(maxRadiusFromWidth, maxRadiusFromHeight, 70));
 
-    // Much smaller club radius - force compact size
-    const maxRadius = Math.min(cellWidth, cellHeight) * 0.25; // Reduced from 0.35
-    this.groupRadius = Math.min(maxRadius, 80); // Cap at 80px instead of 120px
+    console.log(`Grid: ${numRows}x${numColumns}, Cell: ${cellWidth.toFixed(0)}x${cellHeight.toFixed(0)}, Radius: ${this.groupRadius}`);
 
-    // Position groups with minimal spacing
+    // Position groups in a tight grid
     this.groups.forEach((group, i) => {
       const row = Math.floor(i / numColumns);
       const col = i % numColumns;
       
-      const x = padding + cellWidth * (col + 0.5);
-      const y = padding + cellHeight * (row + 0.5);
+      // Center each club within its cell
+      const x = padding + cellWidth * col + cellWidth * 0.5;
+      const y = padding + cellHeight * row + cellHeight * 0.5;
       
       this.groupPositions.set(group.id, { x, y });
       
-      // Update group's position for other visualizers
-      if (group.setPosition) {
-        group.setPosition(x, y);
-      }
+      console.log(`Club ${group.id}: position (${x.toFixed(0)}, ${y.toFixed(0)})`);
     });
 
-    console.log(`Positioned ${numGroups} clubs in ${numRows}x${numColumns} very compact grid`);
-    console.log(`Club radius: ${this.groupRadius}px, cell size: ${cellWidth.toFixed(0)}x${cellHeight.toFixed(0)}`);
+    console.log(`Positioned ${numGroups} clubs in ${numRows}x${numColumns} compact grid, radius=${this.groupRadius}px`);
   }
 
   /**
@@ -154,19 +165,27 @@ export class CanvasVisualizer extends Visualizer {
     }
 
     const rect = wrapper.getBoundingClientRect();
+    console.log(`Canvas wrapper size: ${rect.width}x${rect.height}`);
+    
+    // Ensure minimum reasonable size
+    const width = Math.max(400, rect.width);
+    const height = Math.max(300, rect.height);
+    
     const dpr = window.devicePixelRatio || 1;
     
-    this.canvas.width = rect.width * dpr;
-    this.canvas.height = rect.height * dpr;
-    this.canvas.style.width = `${rect.width}px`;
-    this.canvas.style.height = `${rect.height}px`;
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
 
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.scale(dpr, dpr);
 
-    this.width = rect.width;
-    this.height = rect.height;
+    this.width = width;
+    this.height = height;
     this.minDimension = Math.min(this.width, this.height);
+    
+    console.log(`Canvas updated: ${this.width}x${this.height}, DPR: ${dpr}`);
   }
 
   /**
@@ -178,12 +197,20 @@ export class CanvasVisualizer extends Visualizer {
       return;
     }
 
-    // Clear canvas
-    this.ctx.clearRect(0, 0, this.width, this.height);
+    // Clear canvas with light background
+    this.ctx.fillStyle = "#f9fafb";
+    this.ctx.fillRect(0, 0, this.width, this.height);
 
     if (!this.groups || !this.people) {
+      // Draw debug info when no data
+      this.ctx.fillStyle = "#666";
+      this.ctx.font = "16px Arial";
+      this.ctx.textAlign = "center";
+      this.ctx.fillText("No simulation data", this.width / 2, this.height / 2);
       return;
     }
+
+    console.log(`Drawing ${this.groups.length} groups on ${this.width}x${this.height} canvas`);
 
     // Draw each group
     this.groups.forEach(group => {
@@ -313,16 +340,18 @@ export class CanvasVisualizer extends Visualizer {
     const opinion = person.getOpinion();
     const color = this.colors[opinion] || "#888";
 
-    // Draw person dot - sized for compact layout
-    const dotRadius = Math.max(3, Math.min(6, this.groupRadius * 0.07));
+    // Larger, more visible dots
+    const dotRadius = Math.max(4, Math.min(8, this.groupRadius * 0.1));
+    
+    // Draw person dot with shadow for better visibility
     this.ctx.beginPath();
     this.ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
     this.ctx.fillStyle = color;
     this.ctx.fill();
     
-    // Add white border for visibility
+    // Stronger white border for better contrast
     this.ctx.strokeStyle = "#fff";
-    this.ctx.lineWidth = Math.max(0.5, dotRadius * 0.15);
+    this.ctx.lineWidth = Math.max(1, dotRadius * 0.2);
     this.ctx.stroke();
   }
 
