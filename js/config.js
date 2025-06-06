@@ -9,6 +9,7 @@
  */
 export const MODEL_TYPES = {
   SCHELLING_ONLY: 'schelling',
+  CLASSICAL_SCHELLING: 'classical_schelling',
   VOTER_PAIRWISE: 'voter_pairwise',
   VOTER_GROUP: 'voter_group', 
   COMBINED: 'combined',
@@ -20,6 +21,7 @@ export const MODEL_TYPES = {
  */
 export const MODEL_DESCRIPTIONS = {
   [MODEL_TYPES.SCHELLING_ONLY]: "Network dynamics with edge creation/deletion based on homophily",
+  [MODEL_TYPES.CLASSICAL_SCHELLING]: "Original Schelling segregation model adapted to random intersection graphs",
   [MODEL_TYPES.VOTER_PAIRWISE]: "Pairwise opinion change between connected individuals",
   [MODEL_TYPES.VOTER_GROUP]: "Group-influenced opinion change based on club membership",
   [MODEL_TYPES.COMBINED]: "Combined Schelling network dynamics with group-based voter model",

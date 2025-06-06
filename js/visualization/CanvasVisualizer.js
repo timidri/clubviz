@@ -305,9 +305,9 @@ export class CanvasVisualizer extends Visualizer {
 
     if (total === 0) return;
 
-    const barWidth = this.groupRadius * 1.0; // Extremely narrow - save every pixel
-    const barHeight = Math.max(8, this.groupRadius * 0.08); // Ultra-short bars
-    const statsY = -this.groupRadius - barHeight * 0.8; // Overlapping with circle edge
+    const barWidth = this.groupRadius * 1.4; // Proper width for readability
+    const barHeight = Math.max(14, this.groupRadius * 0.12); // Readable bar height
+    const statsY = -this.groupRadius - barHeight * 2.5; // Clear separation from circle
 
     // Background with gradient
     const bgGradient = this.ctx.createLinearGradient(-barWidth/2, statsY, -barWidth/2, statsY + barHeight);
@@ -342,12 +342,12 @@ export class CanvasVisualizer extends Visualizer {
     this.ctx.lineWidth = 2;
     this.ctx.strokeRect(-barWidth/2, statsY, barWidth, barHeight);
 
-    // Count labels - ultra-compact to save space
-    const fontSize = Math.max(8, Math.min(11, this.groupRadius * 0.08)); // Ultra-small text
+    // Count labels - readable size
+    const fontSize = Math.max(12, Math.min(16, this.groupRadius * 0.14)); // Readable text size
     this.ctx.font = `bold ${fontSize}px Inter, Arial, sans-serif`;
     this.ctx.textAlign = "center";
     
-    const labelY = statsY - fontSize * 0.2; // Nearly touching
+    const labelY = statsY - fontSize * 1.2; // Clear separation
     const text = `+1: ${positiveCount} | -1: ${negativeCount}`;
     
     // Text shadow for better visibility
@@ -364,11 +364,11 @@ export class CanvasVisualizer extends Visualizer {
    * @param {Group} group - The club to draw label for.
    */
   drawGroupLabel(group) {
-    const fontSize = Math.max(10, Math.min(14, this.groupRadius * 0.12)); // Ultra-compact labels
+    const fontSize = Math.max(14, Math.min(20, this.groupRadius * 0.16)); // Readable labels
     this.ctx.font = `bold ${fontSize}px Inter, Arial, sans-serif`;
     this.ctx.textAlign = "center";
     
-    const labelY = this.groupRadius + fontSize * 0.5; // Nearly touching circle
+    const labelY = this.groupRadius + fontSize * 2.0; // Clear separation from circle
     const text = `Club ${group.id}`;
     
     // Draw text shadow for better visibility

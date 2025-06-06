@@ -642,6 +642,7 @@ export class Dashboard {
   formatModelName(modelType) {
     const names = {
       [MODEL_TYPES.SCHELLING_ONLY]: "Schelling Only",
+      [MODEL_TYPES.CLASSICAL_SCHELLING]: "Classical Schelling",
       [MODEL_TYPES.VOTER_PAIRWISE]: "Voter (Pairwise)", 
       [MODEL_TYPES.VOTER_GROUP]: "Voter (Group-based)",
       [MODEL_TYPES.COMBINED]: "Combined Model",

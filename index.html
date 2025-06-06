@@ -36,27 +36,42 @@
               <!-- Graph Structure -->
               <div class="parameter-group">
                 <h4>Graph Structure</h4>
-                <label for="n">Number of people (n):</label>
+                <label for="n">
+                  Number of people (n):
+                  <span class="help-icon" data-tooltip="Total number of individuals in the simulation. Higher values create more complex networks but slower computation.">?</span>
+                </label>
                 <input type="number" id="n" class="parameter-input" min="10" max="1000" value="100" />
                 
-                <label for="m">Number of clubs (m):</label>
+                <label for="m">
+                  Number of clubs (m):
+                  <span class="help-icon" data-tooltip="Number of social clubs or groups. People can belong to multiple clubs, creating interconnections in the network.">?</span>
+                </label>
                 <input type="number" id="m" class="parameter-input" min="1" max="100" value="4" />
               </div>
 
               <!-- Schelling Model Parameters -->
               <div class="parameter-group schelling-params">
                 <h4>Schelling Model</h4>
-                <label for="c">Edge creation rate (c):</label>
+                <label for="c">
+                  Edge creation rate (c):
+                  <span class="help-icon" data-tooltip="Controls how quickly people form connections based on opinion similarity. Higher values lead to faster clustering.">?</span>
+                </label>
                 <input type="number" id="c" class="parameter-input" min="0.1" max="10" step="0.1" value="2.0" />
                 
-                <label for="gFunction">G-function type:</label>
+                <label for="gFunction">
+                  G-function type:
+                  <span class="help-icon" data-tooltip="Determines how opinion similarity affects connection probability: Linear (gradual), Sigmoid (smooth transition), Threshold (sharp cutoff).">?</span>
+                </label>
                 <select id="gFunction" class="parameter-input">
                   <option value="linear">Linear</option>
                   <option value="sigmoid">Sigmoid</option>
                   <option value="threshold">Threshold</option>
                 </select>
                 
-                <label for="gSteepness">G-function steepness:</label>
+                <label for="gSteepness">
+                  G-function steepness:
+                  <span class="help-icon" data-tooltip="Controls the steepness of the G-function. Higher values create more pronounced similarity preferences.">?</span>
+                </label>
                 <input type="number" id="gSteepness" class="parameter-input" min="0.1" max="10" step="0.1" value="3.0" />
               </div>
 
@@ -65,10 +80,14 @@
                 <h4>Graph Generation</h4>
                 <label for="isHomogeneous">
                   <input type="checkbox" id="isHomogeneous" checked> Homogeneous Generation
+                  <span class="help-icon" data-tooltip="When enabled, all people and clubs have equal weights. When disabled, allows for different popularity levels.">?</span>
                 </label>
                 
                 <div id="homogeneousParams" class="sub-params">
-                  <label for="lambda">Connectivity (λ):</label>
+                  <label for="lambda">
+                    Connectivity (λ):
+                    <span class="help-icon" data-tooltip="Controls the overall connectivity of the random intersection graph. Higher values create denser networks.">?</span>
+                  </label>
                   <input type="number" id="lambda" class="parameter-input" min="0.1" max="10" step="0.1" value="1.0" />
                 </div>
                 
@@ -95,10 +114,16 @@
                 
                 <!-- Pairwise Voter Parameters -->
                 <div class="voter-pairwise-params" style="display: none;">
-                  <label for="lambdaVoter">Update rate (λ):</label>
+                  <label for="lambdaVoter">
+                    Update rate (λ):
+                    <span class="help-icon" data-tooltip="Rate at which opinion updates occur in pairwise interactions. Higher values lead to faster opinion changes.">?</span>
+                  </label>
                   <input type="number" id="lambdaVoter" class="parameter-input" min="0" max="2" step="0.1" value="0.5" />
                   
-                  <label for="updateRule">Update rule:</label>
+                  <label for="updateRule">
+                    Update rule:
+                    <span class="help-icon" data-tooltip="Determines which person in a pair changes their opinion: Random (50/50 chance) or First (always the first person).">?</span>
+                  </label>
                   <select id="updateRule" class="parameter-input">
                     <option value="random">Random 50/50</option>
                     <option value="first">First in pair</option>
@@ -107,16 +132,25 @@
                 
                 <!-- Group-based Voter Parameters -->
                 <div class="voter-group-params">
-                  <label for="gamma">Opinion change rate (γ):</label>
+                  <label for="gamma">
+                    Opinion change rate (γ):
+                    <span class="help-icon" data-tooltip="Probability that a person changes their opinion when exposed to different opinions in their clubs.">?</span>
+                  </label>
                   <input type="number" id="gamma" class="parameter-input" min="0" max="1" step="0.01" value="0.3" />
                   
-                  <label for="voterType">Voter type:</label>
+                  <label for="voterType">
+                    Voter type:
+                    <span class="help-icon" data-tooltip="Club-based: opinions change based on club majority. Individual-based: opinions change through direct pairwise interactions.">?</span>
+                  </label>
                   <select id="voterType" class="parameter-input">
                     <option value="group">Club-based</option>
                     <option value="individual">Individual-based</option>
                   </select>
                   
-                  <label for="etaFunction">Opinion change function (η):</label>
+                  <label for="etaFunction">
+                    Opinion change function (η):
+                    <span class="help-icon" data-tooltip="Function determining how opinion differences influence change probability: Linear, Sigmoid, Threshold, or Custom.">?</span>
+                  </label>
                   <select id="etaFunction" class="parameter-input">
                     <option value="linear">Linear</option>
                     <option value="sigmoid">Sigmoid</option>
@@ -145,10 +179,16 @@
               <!-- Initial Conditions -->
               <div class="parameter-group">
                 <h4>Initial Conditions</h4>
-                <label for="initialOpinionSplit">Initial +1 opinion ratio:</label>
+                <label for="initialOpinionSplit">
+                  Initial +1 opinion ratio:
+                  <span class="help-icon" data-tooltip="Fraction of people who start with +1 opinion. 0.5 means equal split, 0.7 means 70% have +1 opinion.">?</span>
+                </label>
                 <input type="number" id="initialOpinionSplit" class="parameter-input" min="0" max="1" step="0.01" value="0.5" />
                 
-                <label for="initialGroupWeights">Club weight distribution:</label>
+                <label for="initialGroupWeights">
+                  Club weight distribution:
+                  <span class="help-icon" data-tooltip="How club popularity is distributed: Uniform (all equal) or Exponential (few very popular clubs).">?</span>
+                </label>
                 <select id="initialGroupWeights" class="parameter-input">
                   <option value="uniform">Uniform</option>
                   <option value="exponential">Exponential</option>

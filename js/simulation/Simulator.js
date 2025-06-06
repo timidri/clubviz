@@ -73,12 +73,21 @@ export class Simulator {
       case MODEL_TYPES.SCHELLING_ONLY:
         this.executeSchellingDynamics(turnResults);
         break;
-      case MODEL_TYPES.VOTER_ONLY:
+      case MODEL_TYPES.CLASSICAL_SCHELLING:
+        this.executeClassicalSchellingDynamics(turnResults);
+        break;
+      case MODEL_TYPES.VOTER_PAIRWISE:
+        this.executeVoterDynamics(turnResults);
+        break;
+      case MODEL_TYPES.VOTER_GROUP:
         this.executeVoterDynamics(turnResults);
         break;
       case MODEL_TYPES.COMBINED:
         this.executeSchellingDynamics(turnResults);
         this.executeVoterDynamics(turnResults);
+        break;
+      case MODEL_TYPES.SIR_EPIDEMIC:
+        this.executeSIRDynamics(turnResults);
         break;
     }
 
@@ -150,6 +159,126 @@ export class Simulator {
         }
       });
     });
+  }
+
+  /**
+   * Executes Classical Schelling model dynamics: people relocate between clubs based on homophily.
+   * Implements the original Schelling segregation model adapted to random intersection graphs.
+   * @param {object} turnResults - Turn results object to update
+   */
+  executeClassicalSchellingDynamics(turnResults) {
+    const threshold = this.config.gSteepness / 10; // Use steepness as happiness threshold
+    const relocationRate = this.config.c / 10; // Use c as base relocation probability
+    
+    this.people.forEach(person => {
+      const currentGroups = person.getGroups();
+      
+      // For each current group membership, check happiness
+      currentGroups.forEach(group => {
+        const happiness = this.calculateHappiness(person, group);
+        
+        // If unhappy (below threshold), consider relocating
+        if (happiness < threshold && Math.random() < relocationRate) {
+          // Find a better group
+          const bestGroup = this.findBestGroupForPerson(person);
+          
+          if (bestGroup && bestGroup.id !== group.id) {
+            // Leave current group
+            person.disconnectFromGroup(group, this.turnCounter);
+            turnResults.schelling.edgeChanges.push({
+              type: 'delete',
+              personId: person.id,
+              groupId: group.id,
+              personOpinion: person.getOpinion(),
+              reason: 'classical_schelling_relocation',
+              happiness: happiness
+            });
+            turnResults.schelling.deletedEdges++;
+            
+            // Join better group
+            person.connectToGroup(bestGroup, this.turnCounter);
+            turnResults.schelling.edgeChanges.push({
+              type: 'create',
+              personId: person.id,
+              groupId: bestGroup.id,
+              personOpinion: person.getOpinion(),
+              reason: 'classical_schelling_relocation',
+              expectedHappiness: this.calculateHappiness(person, bestGroup)
+            });
+            turnResults.schelling.createdEdges++;
+            
+            if (this.tester) {
+              this.tester.logClassicalSchellingMove(person, group, bestGroup, happiness);
+            }
+          }
+        }
+      });
+    });
+  }
+
+  /**
+   * Calculates happiness of a person in a group based on opinion similarity.
+   * @param {Person} person - The person to evaluate
+   * @param {Group} group - The group to evaluate
+   * @returns {number} Happiness score between 0 and 1
+   */
+  calculateHappiness(person, group) {
+    const personOpinion = person.getOpinion();
+    const { positive, negative } = group.getOpinionCounts();
+    const total = positive + negative;
+    
+    if (total <= 1) return 1; // Happy if alone or very small group
+    
+    const sameOpinionCount = personOpinion > 0 ? positive - 1 : negative - 1; // Exclude self
+    const otherOpinionCount = personOpinion > 0 ? negative : positive;
+    
+    // Happiness is fraction of group with same opinion
+    return total > 0 ? sameOpinionCount / (total - 1) : 1;
+  }
+
+  /**
+   * Finds the best group for a person to join based on opinion similarity.
+   * @param {Person} person - The person looking for a group
+   * @returns {Group|null} Best group or null if no improvement possible
+   */
+  findBestGroupForPerson(person) {
+    let bestGroup = null;
+    let bestHappiness = -1;
+    
+    this.groups.forEach(group => {
+      // Calculate potential happiness if joining this group
+      const potentialHappiness = this.calculatePotentialHappiness(person, group);
+      
+      // Only consider if this group would make them happier
+      if (potentialHappiness > bestHappiness) {
+        bestHappiness = potentialHappiness;
+        bestGroup = group;
+      }
+    });
+    
+    return bestGroup;
+  }
+
+  /**
+   * Calculates potential happiness if person joins a group.
+   * @param {Person} person - The person considering joining
+   * @param {Group} group - The group they might join
+   * @returns {number} Potential happiness score
+   */
+  calculatePotentialHappiness(person, group) {
+    const personOpinion = person.getOpinion();
+    const { positive, negative } = group.getOpinionCounts();
+    const total = positive + negative;
+    
+    // Add person to the counts
+    const newPositive = positive + (personOpinion > 0 ? 1 : 0);
+    const newNegative = negative + (personOpinion < 0 ? 1 : 0);
+    const newTotal = newPositive + newNegative;
+    
+    if (newTotal <= 1) return 1;
+    
+    const sameOpinionCount = personOpinion > 0 ? newPositive - 1 : newNegative - 1;
+    return sameOpinionCount / (newTotal - 1);
   }
 
   /**
