@@ -167,6 +167,8 @@ body {
 .model-option:hover {
   background: var(--primary-50);
   border-color: var(--primary-200);
+  position: relative;
+  z-index: 30;
 }
 
 .model-option input[type="radio"]:checked + span {
@@ -771,15 +773,15 @@ body {
 .help-icon:hover::before {
   visibility: visible;
   opacity: 1;
-  transform: translateY(0);
+  transform: translateX(-50%) translateY(0);
 }
 
 .help-icon::after {
   content: attr(data-tooltip);
   position: absolute;
   bottom: 130%;
-  right: 0;
-  transform: translateY(10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
   background-color: var(--gray-800);
   color: white;
   padding: 0.75rem 1rem;
@@ -801,8 +803,8 @@ body {
   content: '';
   position: absolute;
   bottom: calc(130% - 5px);
-  right: 8px;
-  transform: translateY(10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
   border-width: 5px;
   border-style: solid;
   border-color: var(--gray-800) transparent transparent transparent;
