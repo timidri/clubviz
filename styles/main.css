@@ -771,16 +771,15 @@ body {
 .help-icon:hover::before {
   visibility: visible;
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  transition-delay: 0.2s;
+  transform: translateY(0);
 }
 
 .help-icon::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: 140%;
-  left: 50%;
-  transform: translateX(-50%) translateY(10px);
+  bottom: 130%;
+  right: 0;
+  transform: translateY(10px);
   background-color: var(--gray-800);
   color: white;
   padding: 0.75rem 1rem;
@@ -788,7 +787,7 @@ body {
   font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1.5;
-  width: 280px;
+  width: 260px;
   text-align: left;
   visibility: hidden;
   opacity: 0;
@@ -801,13 +800,12 @@ body {
 .help-icon::before {
   content: '';
   position: absolute;
-  bottom: calc(140% - 5px);
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: calc(130% - 5px);
+  right: 8px;
+  transform: translateY(10px);
   border-width: 5px;
   border-style: solid;
   border-color: var(--gray-800) transparent transparent transparent;
-  border-top-color: var(--gray-800);
   visibility: hidden;
   opacity: 0;
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
